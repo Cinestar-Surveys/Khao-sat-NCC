@@ -15,10 +15,16 @@ primaryColor="#6f42c1"
     """)
 
 # =====================================================================
-# --- CẤU HÌNH THÔNG TIN CÔNG TY & BẢO MẬT ---
+# --- CẤU HÌNH BẢO MẬT (ĐỌC TỪ KÉT SẮT SECRETS) ---
 # =====================================================================
-WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzT9_6uEpUe6sFqc-vsM9XmIU4g7gdGEExyi95exYsCB5SrqG8i9B-n6TQ8FrhPCv-2rQ/exec"
-COMPANY_PASSWORD = "Cinestar" 
+try:
+    # Code sẽ tự động lấy thông tin từ phần Advanced Settings bạn vừa nhập
+    WEB_APP_URL = st.secrets["WEB_APP_URL"]
+    COMPANY_PASSWORD = st.secrets["COMPANY_PASSWORD"]
+except KeyError:
+    st.error("🚨 Báo động: Chưa cài đặt Mật khẩu trong két sắt Secrets của Streamlit!")
+    st.stop()
+
 LOGO_URL = "logo.png" 
 
 # --- CẤU HÌNH TRANG ---
@@ -26,68 +32,54 @@ st.set_page_config(
     page_title="Đánh giá NCC Cinestar", 
     layout="wide", 
     page_icon="🍿",
-    initial_sidebar_state="collapsed" # Tự động thu gọn thanh bên lúc mới vào
+    initial_sidebar_state="collapsed" 
 )
 
-# --- CSS TÙY CHỈNH CHUNG ---
+# =====================================================================
+# --- CHIÊU CUỐI: "MẶT NẠ TÀNG HÌNH" CHE LOGO & TÊN ---
+# =====================================================================
 st.markdown("""
+    <div class="css-mask-top"></div>
+    <div class="css-mask-bottom"></div>
     <style>
-    /* =========================================
-       ẨN CÁC THÀNH PHẦN STREAMLIT MẠNH NHẤT
-       ========================================= */
-    #MainMenu {visibility: hidden !important;} 
-    footer {display: none !important;} 
-    header {display: none !important;}
-    .viewerBadge_container__1QSob {display: none !important;} /* Cố ẩn badge Streamlit góc dưới */
-    
+    .css-mask-top {
+        position: fixed; top: 0; right: 0; width: 300px; height: 60px;
+        background-color: var(--background-color); z-index: 9999999;
+    }
+    .css-mask-bottom {
+        position: fixed; bottom: 0; right: 0; width: 100%; height: 50px;
+        background-color: var(--background-color); z-index: 9999999;
+    }
+
+    header {visibility: hidden !important; display: none !important;}
+    footer {visibility: hidden !important; display: none !important;}
     [data-testid="stHeader"] {display: none !important;}
     [data-testid="stFooter"] {display: none !important;}
     [data-testid="stToolbar"] {display: none !important;}
     
-    /* Thu gọn khoảng trắng trên cùng */
     .block-container {
         padding-top: 2rem !important;
-        padding-bottom: 0rem !important;
+        padding-bottom: 3rem !important;
     }
-    /* ========================================= */
 
-    /* Nút bấm mặc định: Tím (#6f42c1) */
     .stButton>button { 
-        width: 100%; 
-        border-radius: 5px; 
-        height: 3em; 
-        background-color: #6f42c1 !important; 
-        color: white !important; 
-        font-weight: bold; 
-        border: none; 
+        width: 100%; border-radius: 5px; height: 3em; 
+        background-color: #6f42c1 !important; color: white !important; 
+        font-weight: bold; border: none; 
     }
-    
     .stButton>button:hover { 
-        background-color: #59339d !important; 
-        color: white !important; 
+        background-color: #59339d !important; color: white !important; 
     }
-    
     .header-container { 
-        text-align: center; 
-        padding: 20px; 
-        border-bottom: 4px solid #6f42c1; 
-        margin-bottom: 20px; 
-        border-radius: 10px; 
-        box-shadow: 0 4px 6px rgba(111, 66, 193, 0.2); 
+        text-align: center; padding: 20px; border-bottom: 4px solid #6f42c1; 
+        margin-bottom: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(111, 66, 193, 0.2); 
     }
-    
     .welcome-text { 
-        font-size: 1.2rem; 
-        line-height: 1.6; 
-        text-align: center; 
-        max-width: 800px; 
-        margin: 0 auto; 
-        padding: 20px; 
+        font-size: 1.2rem; line-height: 1.6; text-align: center; 
+        max-width: 800px; margin: 0 auto; padding: 20px; 
     }
-    
     [data-testid="stForm"] {
-        border: 2px solid #6f42c1 !important;
-        border-radius: 10px;
+        border: 2px solid #6f42c1 !important; border-radius: 10px;
     }
     </style>
 """, unsafe_allow_html=True)
