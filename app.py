@@ -18,43 +18,57 @@ LOGO_URL = "logo.png"
 # --- CẤU HÌNH TRANG ---
 st.set_page_config(page_title="Đánh giá NCC Cinestar", layout="wide", page_icon="🍿")
 
-# --- CSS TÙY CHỈNH CHUNG (ĐÃ ĐỔI SANG MÀU TÍM THEO YÊU CẦU) ---
+# --- CSS TÙY CHỈNH: ÉP NỀN TRẮNG & CHỮ TÍM ĐẬM ---
 st.markdown("""
     <style>
-    .main { background-color: #f8f9fa; }
+    /* 1. Ép nền toàn bộ trang web thành màu trắng */
+    .stApp, .main { 
+        background-color: #ffffff !important; 
+    }
     
-    /* Màu nút bấm mặc định: Tím (#6f42c1) */
+    /* 2. Ép toàn bộ chữ (văn bản thường) thành màu Tím đậm */
+    html, body, p, div, span, label, li { 
+        color: #4a148c !important; 
+    }
+    
+    /* 3. Ép màu các Tiêu đề (Header) thành màu Tím cực đậm */
+    h1, h2, h3, h4, h5, h6 { 
+        color: #311b92 !important; 
+    }
+    
+    /* 4. Định dạng màu nút bấm: Nền Tím (#6f42c1), Chữ Trắng */
     .stButton>button { 
         width: 100%; 
         border-radius: 5px; 
         height: 3em; 
-        background-color: #6f42c1; 
-        color: white; 
+        background-color: #6f42c1 !important; 
+        color: #ffffff !important; 
         font-weight: bold; 
         border: none; 
     }
     
-    /* Màu nút bấm khi rê chuột vào: Tím đậm hơn (#59339d) */
+    /* Hiệu ứng khi rê chuột vào nút bấm (Tím tối hơn một chút) */
     .stButton>button:hover { 
-        background-color: #59339d; 
-        color: white; 
+        background-color: #4a148c !important; 
+        color: #ffffff !important; 
     }
     
-    /* Đường viền dưới của Header: Tím */
+    /* 5. Khung chứa Logo và Lời chào */
     .header-container { 
         text-align: center; 
         padding: 20px; 
-        background-color: white; 
+        background-color: #ffffff !important; 
         border-bottom: 4px solid #6f42c1; 
         margin-bottom: 20px; 
         border-radius: 10px; 
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        box-shadow: 0 4px 10px rgba(111, 66, 193, 0.15); 
     }
     
+    /* Định dạng lời tựa */
     .welcome-text { 
         font-size: 1.2rem; 
         line-height: 1.6; 
-        color: #333; 
+        color: #4a148c; 
         text-align: center; 
         max-width: 800px; 
         margin: 0 auto; 
@@ -93,8 +107,8 @@ if st.session_state.current_page == "login":
         try:
             st.image(LOGO_URL, use_container_width=True)
         except:
-            pass # Bỏ qua lỗi nếu chưa có file logo.png
-        st.markdown("<h2 style='text-align: center; color: #333;'>HỆ THỐNG ĐÁNH GIÁ NỘI BỘ</h2>", unsafe_allow_html=True)
+            pass
+        st.markdown("<h2 style='text-align: center;'>HỆ THỐNG ĐÁNH GIÁ NỘI BỘ</h2>", unsafe_allow_html=True)
     
     st.write("<br>", unsafe_allow_html=True)
     col_l, col_m, col_r = st.columns([1, 1, 1])
