@@ -1,4 +1,3 @@
-Trang thứ 2 cũng cần phải định dạng ở giữa, không lăn lên lăn xuống, sửa trên code này
 import streamlit as st
 import pandas as pd
 import time
