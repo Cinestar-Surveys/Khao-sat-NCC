@@ -28,15 +28,26 @@ st.set_page_config(page_title="Đánh giá NCC Cinestar", layout="wide", page_ic
 st.markdown("""
     <style>
     /* =========================================
-       ẨN CÁC THÀNH PHẦN MẶC ĐỊNH CỦA STREAMLIT
+       ẨN TRIỆT ĐỂ CÁC THÀNH PHẦN CỦA STREAMLIT
        ========================================= */
-    #MainMenu {display: none !important;} 
-    footer {display: none !important;} 
-    header {display: none !important;}
+    /* Ẩn Header và Footer mặc định */
+    header {visibility: hidden !important; display: none !important;}
+    footer {visibility: hidden !important; display: none !important;}
     
+    /* Ẩn bằng mã định danh (Bắt buộc cho Streamlit bản mới nhất) */
     [data-testid="stHeader"] {display: none !important;}
     [data-testid="stFooter"] {display: none !important;}
     [data-testid="stToolbar"] {display: none !important;}
+    
+    /* Ép khoảng trắng dưới đáy và trên cùng thu gọn lại */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 0rem !important;
+    }
+    
+    /* Ẩn nút Manage App (nếu nó lọt ra ngoài) */
+    .stApp [data-testid="manage-app-button"] {display: none !important;}
+    /* ========================================= */
 
     /* Nút bấm mặc định: Tím (#6f42c1) */
     .stButton>button { 
@@ -106,20 +117,13 @@ def load_input_files():
 # TRANG 1: MÀN HÌNH ĐĂNG NHẬP
 # =====================================================================
 if st.session_state.current_page == "login":
-    # --- THÊM CSS KHÓA CUỘN & CĂN GIỮA DỌC DÀNH RIÊNG CHO TRANG LOGIN ---
+    # Khóa thanh cuộn và căn giữa
     st.markdown("""
         <style>
-        /* Khóa thanh cuộn toàn bộ trang */
-        [data-testid="stAppViewContainer"] {
-            overflow: hidden !important;
-        }
-        /* Ép nội dung nằm ngay giữa chiều cao màn hình (100vh) */
+        [data-testid="stAppViewContainer"] { overflow: hidden !important; }
         [data-testid="stMainBlockContainer"] {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            height: 100vh;
-            padding-top: 0rem !important;
+            display: flex; flex-direction: column; justify-content: center;
+            height: 100vh; padding-top: 0rem !important;
         }
         </style>
     """, unsafe_allow_html=True)
