@@ -29,6 +29,13 @@ st.set_page_config(page_title="Đánh giá NCC Cinestar", layout="wide", page_ic
 # --- CSS TÙY CHỈNH CHUNG ---
 st.markdown("""
     <style>
+    /* =========================================
+       ẨN CÁC THÀNH PHẦN MẶC ĐỊNH CỦA STREAMLIT
+       ========================================= */
+    #MainMenu {visibility: hidden;} /* Ẩn Menu Hamburger & Deploy góc trên phải */
+    footer {visibility: hidden;}    /* Ẩn chữ Made with Streamlit dưới cùng */
+    header {visibility: hidden;}    /* Ẩn khoảng trắng trên cùng */
+
     /* Nút bấm mặc định: Tím (#6f42c1) */
     .stButton>button { 
         width: 100%; 
