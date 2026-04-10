@@ -104,14 +104,30 @@ def load_input_files():
 # TRANG 1: MÀN HÌNH ĐĂNG NHẬP
 # =====================================================================
 if st.session_state.current_page == "login":
-    st.write("<br><br>", unsafe_allow_html=True) 
+    # --- THÊM CSS KHÓA CUỘN & CĂN GIỮA DỌC DÀNH RIÊNG CHO TRANG LOGIN ---
+    st.markdown("""
+        <style>
+        /* Khóa thanh cuộn toàn bộ trang */
+        [data-testid="stAppViewContainer"] {
+            overflow: hidden !important;
+        }
+        /* Ép nội dung nằm ngay giữa chiều cao màn hình (100vh) */
+        [data-testid="stMainBlockContainer"] {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100vh;
+            padding-top: 0rem !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
     col_img1, col_img2, col_img3 = st.columns([1, 1.5, 1])
     with col_img2:
         try:
             st.image(LOGO_URL, use_container_width=True)
         except:
             pass 
-        # Bỏ ép màu, để tự động đổi màu theo Theme
         st.markdown("<h2 style='text-align: center;'>HỆ THỐNG ĐÁNH GIÁ NỘI BỘ</h2>", unsafe_allow_html=True)
     
     st.write("<br>", unsafe_allow_html=True)
