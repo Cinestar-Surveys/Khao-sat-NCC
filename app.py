@@ -2,77 +2,73 @@ import streamlit as st
 import pandas as pd
 import time
 import requests
+import os
+
+# =====================================================================
+# --- CẤU HÌNH THEME TỰ ĐỘNG (AUTO DARK/LIGHT MODE) ---
+# Chỉ giữ lại màu Tím làm màu chủ đạo (Primary Color) cho thanh tiến độ, checkbox...
+# Còn lại Nền và Chữ sẽ tự động đổi Trắng/Đen theo máy tính của người dùng.
+# =====================================================================
+os.makedirs('.streamlit', exist_ok=True)
+with open('.streamlit/config.toml', 'w') as f:
+    f.write("""
+[theme]
+primaryColor="#6f42c1"
+    """)
 
 # =====================================================================
 # --- CẤU HÌNH THÔNG TIN CÔNG TY & BẢO MẬT ---
 # =====================================================================
-# Thay link này bằng Link Apps Script của Google Sheets của bạn
 WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzT9_6uEpUe6sFqc-vsM9XmIU4g7gdGEExyi95exYsCB5SrqG8i9B-n6TQ8FrhPCv-2rQ/exec"
-
-# Mật khẩu để nhân viên vào web
 COMPANY_PASSWORD = "Cinestar" 
-
-# Link logo (Bạn có thể thay bằng file logo trong máy hoặc link GitHub của bạn)
 LOGO_URL = "logo.png" 
 
 # --- CẤU HÌNH TRANG ---
 st.set_page_config(page_title="Đánh giá NCC Cinestar", layout="wide", page_icon="🍿")
 
-# --- CSS TÙY CHỈNH: ÉP NỀN TRẮNG & CHỮ TÍM ĐẬM ---
+# --- CSS TÙY CHỈNH CHUNG ---
 st.markdown("""
     <style>
-    /* 1. Ép nền toàn bộ trang web thành màu trắng */
-    .stApp, .main { 
-        background-color: #ffffff !important; 
-    }
-    
-    /* 2. Ép toàn bộ chữ (văn bản thường) thành màu Tím đậm */
-    html, body, p, div, span, label, li { 
-        color: #4a148c !important; 
-    }
-    
-    /* 3. Ép màu các Tiêu đề (Header) thành màu Tím cực đậm */
-    h1, h2, h3, h4, h5, h6 { 
-        color: #311b92 !important; 
-    }
-    
-    /* 4. Định dạng màu nút bấm: Nền Tím (#6f42c1), Chữ Trắng */
+    /* Nút bấm mặc định: Tím (#6f42c1) */
     .stButton>button { 
         width: 100%; 
         border-radius: 5px; 
         height: 3em; 
         background-color: #6f42c1 !important; 
-        color: #ffffff !important; 
+        color: white !important; 
         font-weight: bold; 
         border: none; 
     }
     
-    /* Hiệu ứng khi rê chuột vào nút bấm (Tím tối hơn một chút) */
+    /* Màu nút bấm khi rê chuột vào */
     .stButton>button:hover { 
-        background-color: #4a148c !important; 
-        color: #ffffff !important; 
+        background-color: #59339d !important; 
+        color: white !important; 
     }
     
-    /* 5. Khung chứa Logo và Lời chào */
+    /* Đường viền dưới của Header (Không set màu nền để tự thích ứng Dark/Light) */
     .header-container { 
         text-align: center; 
         padding: 20px; 
-        background-color: #ffffff !important; 
         border-bottom: 4px solid #6f42c1; 
         margin-bottom: 20px; 
         border-radius: 10px; 
-        box-shadow: 0 4px 10px rgba(111, 66, 193, 0.15); 
+        box-shadow: 0 4px 6px rgba(111, 66, 193, 0.2); 
     }
     
-    /* Định dạng lời tựa */
     .welcome-text { 
         font-size: 1.2rem; 
         line-height: 1.6; 
-        color: #4a148c; 
         text-align: center; 
         max-width: 800px; 
         margin: 0 auto; 
         padding: 20px; 
+    }
+    
+    /* Đảm bảo Form luôn có viền Tím nổi bật */
+    [data-testid="stForm"] {
+        border: 2px solid #6f42c1 !important;
+        border-radius: 10px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -107,7 +103,8 @@ if st.session_state.current_page == "login":
         try:
             st.image(LOGO_URL, use_container_width=True)
         except:
-            pass
+            pass 
+        # Bỏ ép màu, để tự động đổi màu theo Theme
         st.markdown("<h2 style='text-align: center;'>HỆ THỐNG ĐÁNH GIÁ NỘI BỘ</h2>", unsafe_allow_html=True)
     
     st.write("<br>", unsafe_allow_html=True)
@@ -133,6 +130,7 @@ elif st.session_state.current_page == "welcome":
         st.image(LOGO_URL, width=300)
     except:
         pass
+    # Bỏ ép màu, để tự động đổi màu theo Theme
     st.markdown("<h1>Khảo sát đánh giá Nhà cung cấp</h1>", unsafe_allow_html=True)
     st.markdown("<h2>CINESTAR CINEMAS VIETNAM</h2>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
@@ -163,13 +161,14 @@ elif st.session_state.current_page == "evaluation":
         st.sidebar.image(LOGO_URL, use_container_width=True)
     except:
         pass
+        
     st.sidebar.divider()
-    st.sidebar.markdown("### 🛠 Hỗ trợ kỹ thuật\nLiên hệ Phòng IT / Thu mua")
+    # Nút thoát nằm ngay dưới đường kẻ ở sidebar
     if st.sidebar.button("🚪 Thoát (Đăng xuất)"):
         st.session_state.clear()
         st.rerun()
 
-    st.markdown("## 📋 BẢNG ĐÁNH GIÁ CHI TIẾT")
+    st.markdown("<h2>📋 BẢNG ĐÁNH GIÁ CHI TIẾT</h2>", unsafe_allow_html=True)
     st.caption("Vui lòng điền thông tin và hoàn thành toàn bộ danh sách nhà cung cấp của Site.")
     
     df_sites, df_depts, df_questions = load_input_files()
@@ -191,7 +190,7 @@ elif st.session_state.current_page == "evaluation":
         
         # CỘT TRÁI: CHECKLIST NCC
         with left_col:
-            st.markdown(f"### 🎯 Tiến độ Site: {selected_site}")
+            st.markdown(f"<h3>🎯 Tiến độ Site: {selected_site}</h3>", unsafe_allow_html=True)
             st.progress(evaluated_count / total_ncc if total_ncc > 0 else 0)
             st.write(f"**Đã hoàn thành:** {evaluated_count} / {total_ncc} NCC")
             st.write("---")
@@ -207,7 +206,8 @@ elif st.session_state.current_page == "evaluation":
                 current_ncc = st.selectbox("👉 Chọn NCC cần đánh giá tiếp theo:", remaining_nccs)
                 
                 with st.form(key=f"form_{current_ncc}"):
-                    st.markdown(f"Đang đánh giá: **{current_ncc}**")
+                    # Chỗ này giữ lại màu Tím để làm nổi bật tên NCC đang đánh giá
+                    st.markdown(f"<h4 style='color: #6f42c1;'>Đang đánh giá: {current_ncc}</h4>", unsafe_allow_html=True)
                     df_q_filtered = df_questions[df_questions['Câu hỏi dành cho bộ phận'].astype(str).str.contains(selected_dept, na=False, case=False)]
                     current_answers = []
                     
