@@ -31,9 +31,11 @@ st.markdown("""
     <div class="css-mask-top"></div>
     <div class="css-mask-bottom"></div>
     <style>
+    /* ẨN CÁC THÀNH PHẦN MẶC ĐỊNH */
     header, footer, .viewerBadge_container__1QSob {display: none !important; visibility: hidden !important;}
     [data-testid="stHeader"], [data-testid="stFooter"], [data-testid="stToolbar"] {display: none !important;}
 
+    /* MẶT NẠ CHE TÊN GÓC TRÊN VÀ DƯỚI */
     .css-mask-top {
         position: fixed; top: 0; right: 0; width: 300px; height: 60px;
         background-color: var(--background-color); z-index: 9999999;
@@ -43,6 +45,7 @@ st.markdown("""
         background-color: var(--background-color); z-index: 9999999;
     }
 
+    /* ĐỊNH DẠNG NÚT BẤM */
     .stButton>button { 
         width: 100%; border-radius: 5px; height: 3em; 
         background-color: #6f42c1 !important; color: white !important; 
