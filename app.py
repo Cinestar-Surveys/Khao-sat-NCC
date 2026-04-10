@@ -26,51 +26,30 @@ st.set_page_config(
     page_title="Đánh giá NCC Cinestar", 
     layout="wide", 
     page_icon="🍿",
-    initial_sidebar_state="collapsed" 
+    initial_sidebar_state="collapsed" # Tự động thu gọn thanh bên lúc mới vào
 )
 
-# =====================================================================
-# --- CHIÊU CUỐI: "MẶT NẠ TÀNG HÌNH" CHE LOGO & TÊN ---
-# Tạo các khối div đè lên trên cùng các góc màn hình
-# =====================================================================
+# --- CSS TÙY CHỈNH CHUNG ---
 st.markdown("""
-    <div class="css-mask-top"></div>
-    <div class="css-mask-bottom"></div>
     <style>
-    /* Bức tường che góc trên cùng bên phải (Chỗ hiện Tên/Avatar) */
-    .css-mask-top {
-        position: fixed;
-        top: 0;
-        right: 0;
-        width: 300px;
-        height: 60px;
-        background-color: var(--background-color); /* Tự động đổi màu theo Light/Dark mode */
-        z-index: 9999999;
-    }
+    /* =========================================
+       ẨN CÁC THÀNH PHẦN STREAMLIT MẠNH NHẤT
+       ========================================= */
+    #MainMenu {visibility: hidden !important;} 
+    footer {display: none !important;} 
+    header {display: none !important;}
+    .viewerBadge_container__1QSob {display: none !important;} /* Cố ẩn badge Streamlit góc dưới */
     
-    /* Bức tường che góc dưới cùng (Chỗ hiện chữ Made with Streamlit) */
-    .css-mask-bottom {
-        position: fixed;
-        bottom: 0;
-        right: 0;
-        width: 100%;
-        height: 50px;
-        background-color: var(--background-color);
-        z-index: 9999999;
-    }
-
-    /* Vẫn giữ các lệnh ẩn truyền thống để an toàn gấp đôi */
-    header {visibility: hidden !important; display: none !important;}
-    footer {visibility: hidden !important; display: none !important;}
     [data-testid="stHeader"] {display: none !important;}
     [data-testid="stFooter"] {display: none !important;}
     [data-testid="stToolbar"] {display: none !important;}
     
-    /* Thu gọn khoảng trắng thừa trên cùng */
+    /* Thu gọn khoảng trắng trên cùng */
     .block-container {
         padding-top: 2rem !important;
-        padding-bottom: 3rem !important;
+        padding-bottom: 0rem !important;
     }
+    /* ========================================= */
 
     /* Nút bấm mặc định: Tím (#6f42c1) */
     .stButton>button { 
@@ -82,10 +61,12 @@ st.markdown("""
         font-weight: bold; 
         border: none; 
     }
+    
     .stButton>button:hover { 
         background-color: #59339d !important; 
         color: white !important; 
     }
+    
     .header-container { 
         text-align: center; 
         padding: 20px; 
@@ -94,6 +75,7 @@ st.markdown("""
         border-radius: 10px; 
         box-shadow: 0 4px 6px rgba(111, 66, 193, 0.2); 
     }
+    
     .welcome-text { 
         font-size: 1.2rem; 
         line-height: 1.6; 
@@ -102,6 +84,7 @@ st.markdown("""
         margin: 0 auto; 
         padding: 20px; 
     }
+    
     [data-testid="stForm"] {
         border: 2px solid #6f42c1 !important;
         border-radius: 10px;
