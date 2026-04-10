@@ -145,31 +145,60 @@ if st.session_state.current_page == "login":
 # =====================================================================
 # TRANG 2: LỜI CHÀO MỪNG & GIỚI THIỆU
 # =====================================================================
+# =====================================================================
+# TRANG 2: LỜI CHÀO MỪNG (ĐỊNH DẠNG GIỮA, KHÔNG CUỘN)
+# =====================================================================
 elif st.session_state.current_page == "welcome":
-    st.write("<br><br>", unsafe_allow_html=True)
-    
+    # 1. CSS DÀNH RIÊNG CHO TRANG WELCOME ĐỂ CĂN GIỮA & KHÓA CUỘN
+    st.markdown("""
+        <style>
+        /* Khóa thanh cuộn */
+        [data-testid="stAppViewContainer"] {
+            overflow: hidden !important;
+        }
+        /* Căn giữa tuyệt đối nội dung */
+        [data-testid="stMainBlockContainer"] {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100vh;
+            padding-top: 0rem !important;
+            padding-bottom: 0rem !important;
+        }
+        /* Căn giữa text bên trong container */
+        .header-container, .welcome-text {
+            text-align: center;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # 2. NỘI DUNG HIỂN THỊ
     st.markdown('<div class="header-container">', unsafe_allow_html=True)
     try:
-        st.image(LOGO_URL, width=300)
+        # Giảm size logo một chút để đảm bảo vừa khít màn hình không bị kích hoạt cuộn
+        st.image(LOGO_URL, width=220)
     except:
         pass
-    # Bỏ ép màu, để tự động đổi màu theo Theme
-    st.markdown("<h1>Khảo sát đánh giá Nhà cung cấp</h1>", unsafe_allow_html=True)
-    st.markdown("<h2>CINESTAR CINEMAS VIETNAM</h2>", unsafe_allow_html=True)
+    
+    st.markdown("<h1 style='margin-bottom: 0;'>Khảo sát đánh giá Nhà cung cấp</h1>", unsafe_allow_html=True)
+    st.markdown("<h2 style='margin-top: 0; color: #6f42c1;'>CINESTAR CINEMAS VIETNAM</h2>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown("""
         <div class="welcome-text">
-            <b>Hãy để người trải nghiệm trực tiếp lên tiếng!</b><br><br>
-            Chào mừng bạn đến với hệ thống đánh giá chất lượng nhà cung cấp định kỳ của Cinestar. 
-            Mọi ý kiến, nhận xét trung thực và khách quan của bạn chính là thước đo chính xác nhất, 
-            giúp công ty nhìn nhận đúng năng lực đối tác, từ đó nâng cao chất lượng dịch vụ và 
-            tối ưu hóa quy trình vận hành.<br><br>
-            <i>Hãy dành ra ít phút để hoàn thành bảng khảo sát này một cách tâm huyết nhất nhé!</i>
+            <p style="font-size: 1.2rem; margin-bottom: 20px;">
+                <b>Hãy để người trải nghiệm trực tiếp lên tiếng!</b>
+            </p>
+            Chào mừng bạn đến với hệ thống đánh giá chất lượng nhà cung cấp định kỳ.<br>
+            Mọi ý kiến của bạn chính là thước đo giúp công ty nhìn nhận đúng năng lực đối tác,<br>
+            từ đó nâng cao chất lượng dịch vụ và tối ưu hóa quy trình vận hành.<br><br>
+            <i style="color: #666;">Hãy dành ít phút để hoàn thành khảo sát này một cách tâm huyết nhất nhé!</i>
         </div>
     """, unsafe_allow_html=True)
     
     st.write("<br>", unsafe_allow_html=True)
+    
+    # 3. NÚT BẤM CĂN GIỮA
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         if st.button("🚀 BẮT ĐẦU ĐÁNH GIÁ NGAY", use_container_width=True):
