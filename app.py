@@ -12,20 +12,54 @@ WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzT9_6uEpUe6sFqc-vsM9XmIU
 # Mật khẩu để nhân viên vào web
 COMPANY_PASSWORD = "Cinestar" 
 
-# Link logo (Bạn có thể thay bằng file logo trong máy, VD: "logo.png")
-LOGO_URL = "https://cinestar.com.vn/about-us/" 
+# Link logo (Bạn có thể thay bằng file logo trong máy hoặc link GitHub của bạn)
+LOGO_URL = "logo.png" 
 
 # --- CẤU HÌNH TRANG ---
 st.set_page_config(page_title="Đánh giá NCC Cinestar", layout="wide", page_icon="🍿")
 
-# --- CSS TÙY CHỈNH CHUNG ---
+# --- CSS TÙY CHỈNH CHUNG (ĐÃ ĐỔI SANG MÀU TÍM THEO YÊU CẦU) ---
 st.markdown("""
     <style>
     .main { background-color: #f8f9fa; }
-    .stButton>button { width: 100%; border-radius: 5px; height: 3em; background-color: #f7a800; color: white; font-weight: bold; border: none; }
-    .stButton>button:hover { background-color: #d99000; color: white; }
-    .header-container { text-align: center; padding: 20px; background-color: white; border-bottom: 4px solid #f7a800; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .welcome-text { font-size: 1.2rem; line-height: 1.6; color: #333; text-align: center; max-width: 800px; margin: 0 auto; padding: 20px; }
+    
+    /* Màu nút bấm mặc định: Tím (#6f42c1) */
+    .stButton>button { 
+        width: 100%; 
+        border-radius: 5px; 
+        height: 3em; 
+        background-color: #6f42c1; 
+        color: white; 
+        font-weight: bold; 
+        border: none; 
+    }
+    
+    /* Màu nút bấm khi rê chuột vào: Tím đậm hơn (#59339d) */
+    .stButton>button:hover { 
+        background-color: #59339d; 
+        color: white; 
+    }
+    
+    /* Đường viền dưới của Header: Tím */
+    .header-container { 
+        text-align: center; 
+        padding: 20px; 
+        background-color: white; 
+        border-bottom: 4px solid #6f42c1; 
+        margin-bottom: 20px; 
+        border-radius: 10px; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+    }
+    
+    .welcome-text { 
+        font-size: 1.2rem; 
+        line-height: 1.6; 
+        color: #333; 
+        text-align: center; 
+        max-width: 800px; 
+        margin: 0 auto; 
+        padding: 20px; 
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -56,7 +90,10 @@ if st.session_state.current_page == "login":
     st.write("<br><br>", unsafe_allow_html=True) 
     col_img1, col_img2, col_img3 = st.columns([1, 1.5, 1])
     with col_img2:
-        st.image(LOGO_URL, use_container_width=True)
+        try:
+            st.image(LOGO_URL, use_container_width=True)
+        except:
+            pass # Bỏ qua lỗi nếu chưa có file logo.png
         st.markdown("<h2 style='text-align: center; color: #333;'>HỆ THỐNG ĐÁNH GIÁ NỘI BỘ</h2>", unsafe_allow_html=True)
     
     st.write("<br>", unsafe_allow_html=True)
@@ -78,7 +115,10 @@ elif st.session_state.current_page == "welcome":
     st.write("<br><br>", unsafe_allow_html=True)
     
     st.markdown('<div class="header-container">', unsafe_allow_html=True)
-    st.image(LOGO_URL, width=300)
+    try:
+        st.image(LOGO_URL, width=300)
+    except:
+        pass
     st.markdown("<h1>Khảo sát đánh giá Nhà cung cấp</h1>", unsafe_allow_html=True)
     st.markdown("<h2>CINESTAR CINEMAS VIETNAM</h2>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
@@ -105,7 +145,10 @@ elif st.session_state.current_page == "welcome":
 # TRANG 3: KHU VỰC THỰC HIỆN ĐÁNH GIÁ (MAIN APP)
 # =====================================================================
 elif st.session_state.current_page == "evaluation":
-    st.sidebar.image(LOGO_URL, use_container_width=True)
+    try:
+        st.sidebar.image(LOGO_URL, use_container_width=True)
+    except:
+        pass
     st.sidebar.divider()
     st.sidebar.markdown("### 🛠 Hỗ trợ kỹ thuật\nLiên hệ Phòng IT / Thu mua")
     if st.sidebar.button("🚪 Thoát (Đăng xuất)"):
