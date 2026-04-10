@@ -5,7 +5,7 @@ import requests
 import os
 
 # =====================================================================
-# --- CẤU HÌNH THEME ---
+# --- CẤU HÌNH THEME TỰ ĐỘNG (AUTO DARK/LIGHT MODE) ---
 # =====================================================================
 os.makedirs('.streamlit', exist_ok=True)
 with open('.streamlit/config.toml', 'w') as f:
@@ -25,69 +25,74 @@ except KeyError:
     st.error("🚨 Báo động: Chưa cài đặt Mật khẩu trong két sắt Secrets của Streamlit!")
     st.stop()
 
-LOGO_URL = "logo.png" 
+LOGO_URL = "logo.png"
 
 # --- CẤU HÌNH TRANG ---
-st.set_page_config(
-    page_title="Đánh giá NCC Cinestar", 
-    layout="wide", 
-    page_icon="🍿",
-    initial_sidebar_state="collapsed" 
-)
+st.set_page_config(page_title="Đánh giá NCC Cinestar", layout="wide", page_icon="🍿")
 
-# =====================================================================
-# --- CHIÊU CUỐI: "MẶT NẠ TÀNG HÌNH" CHE LOGO & TÊN ---
-# =====================================================================
+# --- CSS TÙY CHỈNH CHUNG ---
 st.markdown("""
-    <div class="css-mask-top"></div>
-    <div class="css-mask-bottom"></div>
     <style>
-    .css-mask-top {
-        position: fixed; top: 0; right: 0; width: 300px; height: 60px;
-        background-color: var(--background-color); z-index: 9999999;
-    }
-    .css-mask-bottom {
-        position: fixed; bottom: 0; right: 0; width: 100%; height: 50px;
-        background-color: var(--background-color); z-index: 9999999;
-    }
-
-    header {visibility: hidden !important; display: none !important;}
-    footer {visibility: hidden !important; display: none !important;}
+    /* =========================================
+       ẨN CÁC THÀNH PHẦN MẶC ĐỊNH CỦA STREAMLIT
+       ========================================= */
+    #MainMenu {display: none !important;} 
+    footer {display: none !important;} 
+    header {display: none !important;}
+    
     [data-testid="stHeader"] {display: none !important;}
     [data-testid="stFooter"] {display: none !important;}
     [data-testid="stToolbar"] {display: none !important;}
-    
-    .block-container {
-        padding-top: 2rem !important;
-        padding-bottom: 3rem !important;
-    }
 
+    /* Nút bấm mặc định: Tím (#6f42c1) */
     .stButton>button { 
-        width: 100%; border-radius: 5px; height: 3em; 
-        background-color: #6f42c1 !important; color: white !important; 
-        font-weight: bold; border: none; 
+        width: 100%; 
+        border-radius: 5px; 
+        height: 3em; 
+        background-color: #6f42c1 !important; 
+        color: white !important; 
+        font-weight: bold; 
+        border: none; 
     }
+    
+    /* Màu nút bấm khi rê chuột vào */
     .stButton>button:hover { 
-        background-color: #59339d !important; color: white !important; 
+        background-color: #59339d !important; 
+        color: white !important; 
     }
+    
+    /* Đường viền dưới của Header */
     .header-container { 
-        text-align: center; padding: 20px; border-bottom: 4px solid #6f42c1; 
-        margin-bottom: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(111, 66, 193, 0.2); 
+        text-align: center; 
+        padding: 20px; 
+        border-bottom: 4px solid #6f42c1; 
+        margin-bottom: 20px; 
+        border-radius: 10px; 
+        box-shadow: 0 4px 6px rgba(111, 66, 193, 0.2); 
     }
+    
     .welcome-text { 
-        font-size: 1.2rem; line-height: 1.6; text-align: center; 
-        max-width: 800px; margin: 0 auto; padding: 20px; 
+        font-size: 1.2rem; 
+        line-height: 1.6; 
+        text-align: center; 
+        max-width: 800px; 
+        margin: 0 auto; 
+        padding: 20px; 
     }
+    
+    /* Đảm bảo Form luôn có viền Tím nổi bật */
     [data-testid="stForm"] {
-        border: 2px solid #6f42c1 !important; border-radius: 10px;
+        border: 2px solid #6f42c1 !important;
+        border-radius: 10px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- QUẢN LÝ ĐIỀU HƯỚNG TRANG ---
+# --- QUẢN LÝ ĐIỀU HƯỚNG TRANG (ROUTER) ---
 if "current_page" not in st.session_state:
     st.session_state.current_page = "login"
 
+# Quản lý bộ nhớ dữ liệu đánh giá
 if 'evaluated_nccs' not in st.session_state: st.session_state.evaluated_nccs = []
 if 'all_results_buffer' not in st.session_state: st.session_state.all_results_buffer = []
 
@@ -107,12 +112,20 @@ def load_input_files():
 # TRANG 1: MÀN HÌNH ĐĂNG NHẬP
 # =====================================================================
 if st.session_state.current_page == "login":
+    # --- THÊM CSS KHÓA CUỘN & CĂN GIỮA DỌC DÀNH RIÊNG CHO TRANG LOGIN ---
     st.markdown("""
         <style>
-        [data-testid="stAppViewContainer"] { overflow: hidden !important; }
+        /* Khóa thanh cuộn toàn bộ trang */
+        [data-testid="stAppViewContainer"] {
+            overflow: hidden !important;
+        }
+        /* Ép nội dung nằm ngay giữa chiều cao màn hình (100vh) */
         [data-testid="stMainBlockContainer"] {
-            display: flex; flex-direction: column; justify-content: center;
-            height: 100vh; padding-top: 0rem !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100vh;
+            padding-top: 0rem !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -138,10 +151,11 @@ if st.session_state.current_page == "login":
                     st.error("Sai mật khẩu! Vui lòng thử lại.")
 
 # =====================================================================
-# TRANG 2: LỜI CHÀO MỪNG
+# TRANG 2: LỜI CHÀO MỪNG & GIỚI THIỆU
 # =====================================================================
 elif st.session_state.current_page == "welcome":
     st.write("<br><br>", unsafe_allow_html=True)
+    
     st.markdown('<div class="header-container">', unsafe_allow_html=True)
     try:
         st.image(LOGO_URL, width=300)
@@ -170,7 +184,7 @@ elif st.session_state.current_page == "welcome":
             st.rerun()
 
 # =====================================================================
-# TRANG 3: KHU VỰC THỰC HIỆN ĐÁNH GIÁ
+# TRANG 3: KHU VỰC THỰC HIỆN ĐÁNH GIÁ (MAIN APP)
 # =====================================================================
 elif st.session_state.current_page == "evaluation":
     try:
