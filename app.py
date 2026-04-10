@@ -6,8 +6,6 @@ import os
 
 # =====================================================================
 # --- CẤU HÌNH THEME TỰ ĐỘNG (AUTO DARK/LIGHT MODE) ---
-# Chỉ giữ lại màu Tím làm màu chủ đạo (Primary Color) cho thanh tiến độ, checkbox...
-# Còn lại Nền và Chữ sẽ tự động đổi Trắng/Đen theo máy tính của người dùng.
 # =====================================================================
 os.makedirs('.streamlit', exist_ok=True)
 with open('.streamlit/config.toml', 'w') as f:
@@ -32,9 +30,13 @@ st.markdown("""
     /* =========================================
        ẨN CÁC THÀNH PHẦN MẶC ĐỊNH CỦA STREAMLIT
        ========================================= */
-    #MainMenu {visibility: hidden;} /* Ẩn Menu Hamburger & Deploy góc trên phải */
-    footer {visibility: hidden;}    /* Ẩn chữ Made with Streamlit dưới cùng */
-    header {visibility: hidden;}    /* Ẩn khoảng trắng trên cùng */
+    #MainMenu {display: none !important;} 
+    footer {display: none !important;} 
+    header {display: none !important;}
+    
+    [data-testid="stHeader"] {display: none !important;}
+    [data-testid="stFooter"] {display: none !important;}
+    [data-testid="stToolbar"] {display: none !important;}
 
     /* Nút bấm mặc định: Tím (#6f42c1) */
     .stButton>button { 
@@ -53,7 +55,7 @@ st.markdown("""
         color: white !important; 
     }
     
-    /* Đường viền dưới của Header (Không set màu nền để tự thích ứng Dark/Light) */
+    /* Đường viền dưới của Header */
     .header-container { 
         text-align: center; 
         padding: 20px; 
@@ -104,14 +106,30 @@ def load_input_files():
 # TRANG 1: MÀN HÌNH ĐĂNG NHẬP
 # =====================================================================
 if st.session_state.current_page == "login":
-    st.write("<br><br>", unsafe_allow_html=True) 
+    # --- THÊM CSS KHÓA CUỘN & CĂN GIỮA DỌC DÀNH RIÊNG CHO TRANG LOGIN ---
+    st.markdown("""
+        <style>
+        /* Khóa thanh cuộn toàn bộ trang */
+        [data-testid="stAppViewContainer"] {
+            overflow: hidden !important;
+        }
+        /* Ép nội dung nằm ngay giữa chiều cao màn hình (100vh) */
+        [data-testid="stMainBlockContainer"] {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100vh;
+            padding-top: 0rem !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
     col_img1, col_img2, col_img3 = st.columns([1, 1.5, 1])
     with col_img2:
         try:
             st.image(LOGO_URL, use_container_width=True)
         except:
             pass 
-        # Bỏ ép màu, để tự động đổi màu theo Theme
         st.markdown("<h2 style='text-align: center;'>HỆ THỐNG ĐÁNH GIÁ NỘI BỘ</h2>", unsafe_allow_html=True)
     
     st.write("<br>", unsafe_allow_html=True)
@@ -137,7 +155,6 @@ elif st.session_state.current_page == "welcome":
         st.image(LOGO_URL, width=300)
     except:
         pass
-    # Bỏ ép màu, để tự động đổi màu theo Theme
     st.markdown("<h1>Khảo sát đánh giá Nhà cung cấp</h1>", unsafe_allow_html=True)
     st.markdown("<h2>CINESTAR CINEMAS VIETNAM</h2>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
@@ -170,7 +187,6 @@ elif st.session_state.current_page == "evaluation":
         pass
         
     st.sidebar.divider()
-    # Nút thoát nằm ngay dưới đường kẻ ở sidebar
     if st.sidebar.button("🚪 Thoát (Đăng xuất)"):
         st.session_state.clear()
         st.rerun()
@@ -195,7 +211,6 @@ elif st.session_state.current_page == "evaluation":
         st.divider()
         left_col, right_col = st.columns([1, 2.5])
         
-        # CỘT TRÁI: CHECKLIST NCC
         with left_col:
             st.markdown(f"<h3>🎯 Tiến độ Site: {selected_site}</h3>", unsafe_allow_html=True)
             st.progress(evaluated_count / total_ncc if total_ncc > 0 else 0)
@@ -207,13 +222,11 @@ elif st.session_state.current_page == "evaluation":
                 else:
                     st.info(f"⏳ {ncc}")
 
-        # CỘT PHẢI: FORM CÂU HỎI
         with right_col:
             if len(remaining_nccs) > 0:
                 current_ncc = st.selectbox("👉 Chọn NCC cần đánh giá tiếp theo:", remaining_nccs)
                 
                 with st.form(key=f"form_{current_ncc}"):
-                    # Chỗ này giữ lại màu Tím để làm nổi bật tên NCC đang đánh giá
                     st.markdown(f"<h4 style='color: #6f42c1;'>Đang đánh giá: {current_ncc}</h4>", unsafe_allow_html=True)
                     df_q_filtered = df_questions[df_questions['Câu hỏi dành cho bộ phận'].astype(str).str.contains(selected_dept, na=False, case=False)]
                     current_answers = []
