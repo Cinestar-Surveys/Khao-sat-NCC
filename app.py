@@ -150,9 +150,9 @@ elif st.session_state.current_page == "welcome":
     st.markdown("""
     <style>
 
-    /* ===== RESET STREAMLIT ===== */
+    /* ===== RESET ===== */
     .block-container {
-        padding: 0rem 2rem !important;
+        padding: 0 !important;
         max-width: 100% !important;
     }
 
@@ -160,121 +160,155 @@ elif st.session_state.current_page == "welcome":
         visibility: hidden;
     }
 
-    /* ===== BACKGROUND ===== */
-    .main {
-        background: #f4f6fb;
+    html, body {
+        overflow: hidden;
     }
 
-    /* ===== WRAPPER ===== */
-    .wrapper {
+    /* ===== FULL SCREEN ===== */
+    .hero {
+        height: 100vh;
+        width: 100vw;
         display: flex;
-        justify-content: center;
         align-items: center;
-        height: 90vh;
+        justify-content: center;
+        background: radial-gradient(circle at 20% 30%, #8e5cf6 0%, transparent 40%),
+                    radial-gradient(circle at 80% 70%, #6f42c1 0%, transparent 40%),
+                    #0f1117;
+        color: white;
     }
 
-    /* ===== CARD ===== */
-    .card {
-        background: white;
-        padding: 40px 60px;
-        border-radius: 16px;
-        width: 720px;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    /* ===== CONTAINER ===== */
+    .hero-container {
+        width: 1100px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 60px;
     }
 
-    /* ===== LOGO ===== */
+    /* ===== LEFT SIDE ===== */
+    .hero-left {
+        flex: 1;
+    }
+
     .logo {
-        margin-bottom: 10px;
-    }
-
-    /* ===== TITLE ===== */
-    .title {
-        font-size: 30px;
-        font-weight: 700;
-        margin-bottom: 5px;
-    }
-
-    .subtitle {
-        font-size: 18px;
-        color: #6f42c1;
-        font-weight: 600;
         margin-bottom: 20px;
     }
 
-    /* ===== TEXT ===== */
-    .highlight {
-        font-weight: 600;
+    .title {
+        font-size: 42px;
+        font-weight: 800;
+        line-height: 1.2;
         margin-bottom: 10px;
     }
 
-    .desc {
-        color: #555;
-        font-size: 14px;
-        line-height: 1.6;
-        margin-bottom: 15px;
+    .subtitle {
+        font-size: 20px;
+        color: #b39cff;
+        font-weight: 600;
+        margin-bottom: 25px;
     }
 
-    .note {
-        font-size: 13px;
-        color: #888;
-        font-style: italic;
-        margin-bottom: 25px;
+    .desc {
+        font-size: 16px;
+        color: #ccc;
+        line-height: 1.7;
+        margin-bottom: 30px;
+        max-width: 500px;
+    }
+
+    .highlight {
+        font-weight: 600;
+        color: white;
+        margin-bottom: 10px;
     }
 
     /* ===== BUTTON ===== */
     div.stButton {
-        text-align: center;
+        margin-top: 10px;
     }
 
     div.stButton > button {
-        background: #6f42c1;
+        background: linear-gradient(135deg, #8e5cf6, #6f42c1);
         color: white;
-        border-radius: 8px;
-        padding: 12px 30px;
-        font-weight: 600;
         border: none;
-        width: auto !important;
+        padding: 14px 30px;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 10px;
+        box-shadow: 0 8px 25px rgba(111,66,193,0.4);
+        transition: all 0.25s ease;
     }
 
     div.stButton > button:hover {
-        background: #5936a2;
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(111,66,193,0.6);
+    }
+
+    /* ===== RIGHT SIDE (VISUAL) ===== */
+    .hero-right {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .glass-box {
+        width: 400px;
+        height: 300px;
+        border-radius: 20px;
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 18px;
+        color: #aaa;
+        border: 1px solid rgba(255,255,255,0.1);
     }
 
     </style>
     """, unsafe_allow_html=True)
 
-    # ===== WRAPPER START =====
-    st.markdown('<div class="wrapper">', unsafe_allow_html=True)
-    st.markdown('<div class="card">', unsafe_allow_html=True)
+    # ===== HERO START =====
+    st.markdown('<div class="hero">', unsafe_allow_html=True)
+    st.markdown('<div class="hero-container">', unsafe_allow_html=True)
+
+    # ===== LEFT =====
+    st.markdown('<div class="hero-left">', unsafe_allow_html=True)
 
     try:
         st.markdown('<div class="logo">', unsafe_allow_html=True)
-        st.image(LOGO_URL, width=140)
+        st.image(LOGO_URL, width=160)
         st.markdown('</div>', unsafe_allow_html=True)
     except:
         pass
 
-    st.markdown('<div class="title">Khảo sát đánh giá Nhà cung cấp</div>', unsafe_allow_html=True)
+    st.markdown('<div class="title">Khảo sát đánh giá<br>Nhà cung cấp</div>', unsafe_allow_html=True)
     st.markdown('<div class="subtitle">CINESTAR CINEMAS VIETNAM</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="highlight">Hãy để người trải nghiệm trực tiếp lên tiếng!</div>', unsafe_allow_html=True)
 
     st.markdown("""
     <div class="desc">
-    Chào mừng bạn đến với hệ thống đánh giá nhà cung cấp định kỳ.<br>
-    Ý kiến của bạn giúp công ty đánh giá đúng năng lực đối tác và cải thiện chất lượng dịch vụ.
+    Ý kiến của bạn giúp chúng tôi đánh giá đúng năng lực đối tác,
+    cải thiện chất lượng dịch vụ và tối ưu vận hành toàn hệ thống.
     </div>
     """, unsafe_allow_html=True)
-
-    st.markdown('<div class="note">Hãy dành ít phút để hoàn thành khảo sát nhé.</div>', unsafe_allow_html=True)
 
     if st.button("🚀 Bắt đầu đánh giá"):
         st.session_state.current_page = "evaluation"
         st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
+
+    # ===== RIGHT =====
+    st.markdown('<div class="hero-right">', unsafe_allow_html=True)
+    st.markdown('<div class="glass-box">CINESTAR SURVEY</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 # =====================================================================
 # TRANG 3: KHU VỰC THỰC HIỆN ĐÁNH GIÁ (MAIN APP)
 # =====================================================================
