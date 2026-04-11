@@ -143,71 +143,68 @@ if st.session_state.current_page == "login":
                     st.error("Sai mật khẩu! Vui lòng thử lại.")
 
 # =====================================================================
+# TRANG 2: LỜI CHÀO MỪNG & GIỚI THIỆU
 # =====================================================================
-# TRANG 2: CHÀO MỪNG (CĂN GIỮA TUYỆT ĐỐI & GÔM GỌN)
+# =====================================================================
+# TRANG 2: LỜI CHÀO MỪNG (ĐỊNH DẠNG GIỮA, KHÔNG CUỘN)
 # =====================================================================
 elif st.session_state.current_page == "welcome":
-    # 1. CSS Cố định khung hình và thu hẹp khoảng cách
+    # 1. CSS DÀNH RIÊNG CHO TRANG WELCOME ĐỂ CĂN GIỮA & KHÓA CUỘN
     st.markdown("""
         <style>
-        /* Khóa màn hình không cho cuộn */
-        [data-testid="stAppViewContainer"] { overflow: hidden !important; }
-        
-        /* Căn giữa toàn bộ nội dung vào chính giữa màn hình */
+        /* Khóa thanh cuộn */
+        [data-testid="stAppViewContainer"] {
+            overflow: hidden !important;
+        }
+        /* Căn giữa tuyệt đối nội dung */
         [data-testid="stMainBlockContainer"] {
             display: flex;
             flex-direction: column;
             justify-content: center;
-            align-items: center;
             height: 100vh;
-            text-align: center;
             padding-top: 0rem !important;
+            padding-bottom: 0rem !important;
         }
-
-        /* Thu hẹp khoảng cách giữa các khối của Streamlit */
-        [data-testid="stVerticalBlock"] {
-            gap: 0.2rem !important;
-        }
-
-        /* Định dạng tiêu đề gôm sát */
-        .title-main { font-size: 2.2rem !important; font-weight: bold; margin-bottom: -10px; }
-        .title-sub { font-size: 1.5rem !important; color: #6f42c1; margin-top: -5px; margin-bottom: 20px; }
-        
-        /* Định dạng văn bản mô tả */
-        .welcome-desc {
-            max-width: 650px;
-            line-height: 1.5;
-            font-size: 1.1rem;
-            margin-bottom: 25px;
+        /* Căn giữa text bên trong container */
+        .header-container, .welcome-text {
+            text-align: center;
         }
         </style>
     """, unsafe_allow_html=True)
 
-    # 2. Hiển thị Logo (Căn giữa tự động nhờ Flexbox ở trên)
+    # 2. NỘI DUNG HIỂN THỊ
+    st.markdown('<div class="header-container">', unsafe_allow_html=True)
     try:
+        # Giảm size logo một chút để đảm bảo vừa khít màn hình không bị kích hoạt cuộn
         st.image(LOGO_URL, width=220)
     except:
         pass
     
-    # 3. Nội dung văn bản
-    st.markdown('<p class="title-main">Khảo sát đánh giá Nhà cung cấp</p>', unsafe_allow_html=True)
-    st.markdown('<p class="title-sub">CINESTAR CINEMAS VIETNAM</p>', unsafe_allow_html=True)
+    st.markdown("<h1 style='margin-bottom: 0;'>Khảo sát đánh giá Nhà cung cấp</h1>", unsafe_allow_html=True)
+    st.markdown("<h2 style='margin-top: 0; color: #6f42c1;'>CINESTAR CINEMAS VIETNAM</h2>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown("""
-        <div class="welcome-desc">
-            <b>"Hãy để người trải nghiệm trực tiếp lên tiếng!"</b><br>
-            Chào mừng bạn đến với hệ thống đánh giá chất lượng NCC định kỳ.<br>
-            Mọi ý kiến của bạn là thước đo giúp công ty nhìn nhận đúng năng lực đối tác,<br>
-            từ đó nâng cao chất lượng dịch vụ và tối ưu hóa quy trình vận hành.
+        <div class="welcome-text">
+            <p style="font-size: 1.2rem; margin-bottom: 20px;">
+                <b>Hãy để người trải nghiệm trực tiếp lên tiếng!</b>
+            </p>
+            Chào mừng bạn đến với hệ thống đánh giá chất lượng nhà cung cấp định kỳ.<br>
+            Mọi ý kiến của bạn chính là thước đo giúp công ty nhìn nhận đúng năng lực đối tác,<br>
+            từ đó nâng cao chất lượng dịch vụ và tối ưu hóa quy trình vận hành.<br><br>
+            <i style="color: #666;">Hãy dành ít phút để hoàn thành khảo sát này một cách tâm huyết nhất nhé!</i>
         </div>
     """, unsafe_allow_html=True)
     
-    # 4. Nút bấm (Căn giữa)
-    col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
-    with col_btn2:
+    st.write("<br>", unsafe_allow_html=True)
+    
+    # 3. NÚT BẤM CĂN GIỮA
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
         if st.button("🚀 BẮT ĐẦU ĐÁNH GIÁ NGAY", use_container_width=True):
             st.session_state.current_page = "evaluation"
             st.rerun()
+
 # =====================================================================
 # TRANG 3: KHU VỰC THỰC HIỆN ĐÁNH GIÁ (MAIN APP)
 # =====================================================================
