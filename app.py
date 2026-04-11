@@ -144,6 +144,8 @@ if "selected_site" not in st.session_state:
     st.session_state.selected_site = ""
 if "current_ncc_selector" not in st.session_state:
     st.session_state.current_ncc_selector = ""
+if "current_ncc_widget" not in st.session_state:
+    st.session_state.current_ncc_widget = ""
 if "evaluated_nccs" not in st.session_state:
     st.session_state.evaluated_nccs = []
 if "all_results_buffer" not in st.session_state:
@@ -598,15 +600,20 @@ elif st.session_state.current_page == "evaluation":
                 # Tự động trỏ tới NCC chưa hoàn thành tiếp theo để thao tác nhanh hơn.
                 if st.session_state.current_ncc_selector not in list_ncc:
                     st.session_state.current_ncc_selector = get_next_pending_ncc(list_ncc)
+                if st.session_state.current_ncc_widget not in list_ncc:
+                    st.session_state.current_ncc_widget = st.session_state.current_ncc_selector
+                elif st.session_state.current_ncc_widget != st.session_state.current_ncc_selector:
+                    st.session_state.current_ncc_widget = st.session_state.current_ncc_selector
 
                 # Cột phải là form đánh giá cho NCC hiện tại.
                 # Người dùng có thể chọn lại cả NCC đã hoàn thành để sửa kết quả.
                 current_ncc = st.selectbox(
                     "👉 Chọn NCC để đánh giá hoặc đánh giá lại:",
                     list_ncc,
-                    key="current_ncc_selector",
+                    key="current_ncc_widget",
                     format_func=lambda ncc: f"✅ {ncc}" if ncc in evaluated_nccs_for_site else f"⏳ {ncc}",
                 )
+                st.session_state.current_ncc_selector = current_ncc
 
                 if current_ncc in evaluated_nccs_for_site:
                     st.info("NCC này đã được lưu trước đó. Nếu bạn chỉnh lại và bấm lưu, hệ thống sẽ thay kết quả cũ bằng kết quả mới.")
@@ -704,6 +711,7 @@ elif st.session_state.current_page == "evaluation":
                             st.session_state.evaluated_nccs = []
                             st.session_state.all_results_buffer = []
                             st.session_state.current_ncc_selector = ""
+                            st.session_state.current_ncc_widget = ""
                             clear_question_widget_states()
                             time.sleep(2)
                             st.rerun()
