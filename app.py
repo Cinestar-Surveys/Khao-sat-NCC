@@ -143,68 +143,71 @@ if st.session_state.current_page == "login":
                     st.error("Sai mật khẩu! Vui lòng thử lại.")
 
 # =====================================================================
-# TRANG 2: CHÀO MỪNG (BẢN GÔM GỌN - TỐI ƯU KHÔNG GIAN)
+# =====================================================================
+# TRANG 2: CHÀO MỪNG (CĂN GIỮA TUYỆT ĐỐI & GÔM GỌN)
 # =====================================================================
 elif st.session_state.current_page == "welcome":
-    # 1. CSS tinh chỉnh khoảng cách cực hẹp
+    # 1. CSS Cố định khung hình và thu hẹp khoảng cách
     st.markdown("""
         <style>
+        /* Khóa màn hình không cho cuộn */
         [data-testid="stAppViewContainer"] { overflow: hidden !important; }
-        [data-testid="stMainBlockContainer"] {
-            display: flex; flex-direction: column; justify-content: center;
-            height: 100vh; padding: 0 5% !important;
-        }
-        /* Giảm khoảng cách giữa các thành phần Streamlit */
-        [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
         
-        .welcome-box {
+        /* Căn giữa toàn bộ nội dung vào chính giữa màn hình */
+        [data-testid="stMainBlockContainer"] {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
             text-align: center;
-            max-width: 700px;
-            margin: 0 auto;
+            padding-top: 0rem !important;
         }
-        h1 { margin-bottom: 0.2rem !important; font-size: 2.2rem !important; }
-        h3 { margin-top: 0 !important; margin-bottom: 1rem !important; color: #6f42c1; }
-        .welcome-text { 
-            line-height: 1.4; 
-            margin-bottom: 1.5rem;
-            font-size: 1.05rem;
+
+        /* Thu hẹp khoảng cách giữa các khối của Streamlit */
+        [data-testid="stVerticalBlock"] {
+            gap: 0.2rem !important;
+        }
+
+        /* Định dạng tiêu đề gôm sát */
+        .title-main { font-size: 2.2rem !important; font-weight: bold; margin-bottom: -10px; }
+        .title-sub { font-size: 1.5rem !important; color: #6f42c1; margin-top: -5px; margin-bottom: 20px; }
+        
+        /* Định dạng văn bản mô tả */
+        .welcome-desc {
+            max-width: 650px;
+            line-height: 1.5;
+            font-size: 1.1rem;
+            margin-bottom: 25px;
         }
         </style>
     """, unsafe_allow_html=True)
 
-    # 2. Bố cục nội dung trong 1 Box duy nhất
-    with st.container():
-        st.markdown('<div class="welcome-box">', unsafe_allow_html=True)
-        
-        # Logo thu nhỏ hơn chút cho gọn
-        col_logo_l, col_logo_m, col_logo_r = st.columns([1, 0.8, 1])
-        with col_logo_m:
-            try: st.image(LOGO_URL, use_container_width=True)
-            except: pass
-        
-        # Tiêu đề ép sát nhau
-        st.markdown("<h1>Khảo sát đánh giá NCC</h1>", unsafe_allow_html=True)
-        st.markdown("<h3>CINESTAR CINEMAS VIETNAM</h3>", unsafe_allow_html=True)
-        
-        # Nội dung text (Gộp lại cho gọn)
-        st.markdown("""
-            <div class="welcome-text">
-                <b>"Hãy để người trải nghiệm trực tiếp lên tiếng!"</b><br>
-                Chào mừng bạn đến với hệ thống đánh giá chất lượng NCC định kỳ.<br>
-                Mọi ý kiến của bạn là thước đo giúp công ty nhìn nhận đúng năng lực đối tác,<br>
-                nâng cao dịch vụ và tối ưu hóa quy trình vận hành.
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # Nút bấm nằm ngay dưới text
-        c1, c2, c3 = st.columns([1, 1.2, 1])
-        with c2:
-            if st.button("🚀 BẮT ĐẦU ĐÁNH GIÁ NGAY", use_container_width=True):
-                st.session_state.current_page = "evaluation"
-                st.rerun()
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-
+    # 2. Hiển thị Logo (Căn giữa tự động nhờ Flexbox ở trên)
+    try:
+        st.image(LOGO_URL, width=220)
+    except:
+        pass
+    
+    # 3. Nội dung văn bản
+    st.markdown('<p class="title-main">Khảo sát đánh giá Nhà cung cấp</p>', unsafe_allow_html=True)
+    st.markdown('<p class="title-sub">CINESTAR CINEMAS VIETNAM</p>', unsafe_allow_html=True)
+    
+    st.markdown("""
+        <div class="welcome-desc">
+            <b>"Hãy để người trải nghiệm trực tiếp lên tiếng!"</b><br>
+            Chào mừng bạn đến với hệ thống đánh giá chất lượng NCC định kỳ.<br>
+            Mọi ý kiến của bạn là thước đo giúp công ty nhìn nhận đúng năng lực đối tác,<br>
+            từ đó nâng cao chất lượng dịch vụ và tối ưu hóa quy trình vận hành.
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # 4. Nút bấm (Căn giữa)
+    col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
+    with col_btn2:
+        if st.button("🚀 BẮT ĐẦU ĐÁNH GIÁ NGAY", use_container_width=True):
+            st.session_state.current_page = "evaluation"
+            st.rerun()
 # =====================================================================
 # TRANG 3: KHU VỰC THỰC HIỆN ĐÁNH GIÁ (MAIN APP)
 # =====================================================================
