@@ -142,6 +142,8 @@ if "current_page" not in st.session_state:
     st.session_state.current_page = "login"
 if "selected_site" not in st.session_state:
     st.session_state.selected_site = ""
+if "current_ncc_selector" not in st.session_state:
+    st.session_state.current_ncc_selector = ""
 if "evaluated_nccs" not in st.session_state:
     st.session_state.evaluated_nccs = []
 if "all_results_buffer" not in st.session_state:
@@ -236,6 +238,20 @@ def clear_question_widget_states():
     for key in list(st.session_state.keys()):
         if str(key).startswith("q_"):
             del st.session_state[key]
+
+
+def get_next_pending_ncc(list_ncc):
+    # Trả về NCC chưa hoàn thành tiếp theo.
+    # Nếu tất cả đã hoàn thành thì giữ nguyên NCC đang chọn hoặc lấy NCC đầu tiên.
+    evaluated_set = set(st.session_state.evaluated_nccs)
+    for ncc in list_ncc:
+        if ncc not in evaluated_set:
+            return ncc
+
+    if st.session_state.current_ncc_selector in list_ncc:
+        return st.session_state.current_ncc_selector
+
+    return list_ncc[0] if list_ncc else ""
 
 
 def build_site_password(site_name):
@@ -579,11 +595,16 @@ elif st.session_state.current_page == "evaluation":
 
         with right_col:
             if list_ncc:
+                # Tự động trỏ tới NCC chưa hoàn thành tiếp theo để thao tác nhanh hơn.
+                if st.session_state.current_ncc_selector not in list_ncc:
+                    st.session_state.current_ncc_selector = get_next_pending_ncc(list_ncc)
+
                 # Cột phải là form đánh giá cho NCC hiện tại.
                 # Người dùng có thể chọn lại cả NCC đã hoàn thành để sửa kết quả.
                 current_ncc = st.selectbox(
                     "👉 Chọn NCC để đánh giá hoặc đánh giá lại:",
                     list_ncc,
+                    key="current_ncc_selector",
                     format_func=lambda ncc: f"✅ {ncc}" if ncc in evaluated_nccs_for_site else f"⏳ {ncc}",
                 )
 
@@ -648,7 +669,7 @@ elif st.session_state.current_page == "evaluation":
                             # Chưa gửi lên Google ngay, chỉ lưu tạm vào session.
                             # Nếu NCC này đã từng lưu thì dữ liệu mới sẽ ghi đè dữ liệu cũ.
                             replace_ncc_results(current_ncc, current_answers)
-                            st.success(f"Đã lưu kết quả cho NCC: {current_ncc}")
+                            st.session_state.current_ncc_selector = get_next_pending_ncc(list_ncc)
                             st.rerun()
             else:
                 st.warning("Site này chưa có NCC nào trong file dữ liệu.")
@@ -682,6 +703,7 @@ elif st.session_state.current_page == "evaluation":
 
                             st.session_state.evaluated_nccs = []
                             st.session_state.all_results_buffer = []
+                            st.session_state.current_ncc_selector = ""
                             clear_question_widget_states()
                             time.sleep(2)
                             st.rerun()
