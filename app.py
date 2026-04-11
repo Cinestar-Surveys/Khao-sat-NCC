@@ -246,7 +246,6 @@ if st.session_state.current_page == "login":
         with st.container(border=True):
             # Chọn site ngay từ bước đầu để hệ thống biết người dùng thuộc site nào.
             login_site = st.selectbox("🏢 Chọn Site", site_options)
-            st.caption('Mật khẩu đăng nhập theo mẫu: "Tên Site_Cinestar"')
             pwd = st.text_input("🔑 Mật khẩu truy cập", type="password")
             if st.button("ĐĂNG NHẬP"):
                 if login_site == "-- Chọn Site --":
@@ -256,7 +255,7 @@ if st.session_state.current_page == "login":
                     st.session_state.current_page = "welcome"
                     st.rerun()
                 else:
-                    st.error(f'Sai mật khẩu. Mật khẩu đúng phải theo mẫu: "{login_site}_{SITE_PASSWORD_SUFFIX}"')
+                    st.error("Sai mật khẩu. Vui lòng kiểm tra lại thông tin đăng nhập.")
 
 
 # =====================================================================
