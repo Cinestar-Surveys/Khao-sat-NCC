@@ -149,68 +149,82 @@ elif st.session_state.current_page == "welcome":
    # 1. CSS DÀNH RIÊNG CHO TRANG WELCOME
     st.markdown("""
         <style>
-        /* Ẩn Header và Toolbar của Streamlit */
+        /* Ẩn Header và Toolbar */
         header {visibility: hidden;}
         [data-testid="stHeader"] {display: none;}
-        footer {visibility: hidden;}
-        #MainMenu {visibility: hidden;}
-
-        /* Khóa thanh cuộn */
+        
+        /* Gom nội dung vào trung tâm và khóa cuộn */
         [data-testid="stAppViewContainer"] {
             overflow: hidden !important;
+            background-color: #f8f9fa; /* Màu nền nhẹ nhàng */
         }
 
-        /* Loại bỏ khoảng trắng thừa ở đầu trang để căn giữa chuẩn hơn */
         [data-testid="stMainBlockContainer"] {
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
             height: 100vh;
-            padding-top: 0rem !important;
-            padding-bottom: 0rem !important;
-            max-width: 100% !important;
+            padding: 0rem !important;
         }
 
-        /* Căn giữa text và hiệu ứng cho nội dung */
-        .header-container, .welcome-text {
+        /* Khối nội dung chính - GOM LẠI Ở ĐÂY */
+        .main-card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            max-width: 600px; /* Độ rộng tối đa để gom nội dung */
             text-align: center;
-            width: 100%;
+            margin: 0 20px;
         }
-        
-        /* Chỉnh lại độ rộng logo nếu cần để không bị cuộn trang */
-        img {
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
+
+        .header-container h1 { font-size: 2.2rem !important; }
+        .header-container h2 { font-size: 1.5rem !important; }
         </style>
     """, unsafe_allow_html=True)
 
-    # 2. NỘI DUNG HIỂN THỊ
-    st.markdown('<div class="header-container">', unsafe_allow_html=True)
+    # 2. NỘI DUNG HIỂN THỊ TRONG BOX CHỮ
+    st.markdown('<div class="main-card">', unsafe_allow_html=True)
+    
+    # Logo
     try:
-        # Giảm size logo một chút để đảm bảo vừa khít màn hình không bị kích hoạt cuộn
-        st.image(LOGO_URL, width=220)
+        st.image(LOGO_URL, width=180) # Thu nhỏ logo một chút cho thanh thoát
     except:
         pass
     
-    st.markdown("<h1 style='margin-bottom: 0;'>Khảo sát đánh giá Nhà cung cấp</h1>", unsafe_allow_html=True)
-    st.markdown("<h2 style='margin-top: 0; color: #6f42c1;'>CINESTAR CINEMAS VIETNAM</h2>", unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-    
+    # Header
     st.markdown("""
-        <div class="welcome-text">
-            <p style="font-size: 1.2rem; margin-bottom: 20px;">
-                <b>Hãy để người trải nghiệm trực tiếp lên tiếng!</b>
-            </p>
-            Chào mừng bạn đến với hệ thống đánh giá chất lượng nhà cung cấp định kỳ.<br>
-            Mọi ý kiến của bạn chính là thước đo giúp công ty nhìn nhận đúng năng lực đối tác,<br>
-            từ đó nâng cao chất lượng dịch vụ và tối ưu hóa quy trình vận hành.<br><br>
-            <i style="color: #666;">Hãy dành ít phút để hoàn thành khảo sát này một cách tâm huyết nhất nhé!</i>
+        <div class="header-container">
+            <h1 style='margin-bottom: 5px; color: #333;'>Khảo sát đánh giá Nhà cung cấp</h1>
+            <h2 style='margin-top: 0; color: #6f42c1; font-weight: 400;'>CINESTAR CINEMAS VIETNAM</h2>
         </div>
     """, unsafe_allow_html=True)
     
+    # Body Text
+    st.markdown("""
+        <div class="welcome-text" style="color: #444; line-height: 1.6;">
+            <p style="font-size: 1.1rem; margin-top: 20px; color: #000;">
+                <b>Hãy để người trải nghiệm trực tiếp lên tiếng!</b>
+            </p>
+            <p style="font-size: 1rem;">
+                Chào mừng bạn đến với hệ thống đánh giá chất lượng nhà cung cấp định kỳ.
+                Mọi ý kiến của bạn chính là thước đo giúp công ty nhìn nhận đúng năng lực đối tác,
+                từ đó nâng cao chất lượng dịch vụ và tối ưu hóa quy trình vận hành.
+            </p>
+            <p style="font-size: 0.95rem; color: #888; font-style: italic;">
+                Hãy dành ít phút để hoàn thành khảo sát này một cách tâm huyết nhất nhé!
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Nút bấm (Gom gần lại phía trên)
     st.write("<br>", unsafe_allow_html=True)
+    if st.button("🚀 BẮT ĐẦU ĐÁNH GIÁ NGAY", use_container_width=True):
+        st.session_state.current_page = "survey" # Hoặc logic chuyển trang của bạn
+        st.rerun()
+
+    st.markdown('</div>', unsafe_allow_html=True)
     
     # 3. NÚT BẤM CĂN GIỮA
     col1, col2, col3 = st.columns([1, 1, 1])
