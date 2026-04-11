@@ -17,7 +17,7 @@ primaryColor="#6f42c1"
 # =====================================================================
 # --- CẤU HÌNH THÔNG TIN CÔNG TY & BẢO MẬT ---
 # =====================================================================
-WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzT9_6uEpUe6sFqc-vsM9XmIU4g7gdGEExyi95exYsCB5SrqG8i9B-n6TQ8FrhPCv-2rQ/exec"
+WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzavi1yoySkRWfXHbpwxCi8FwmDKdzHVQMSnB2-zmu79V4V8sa1sEVk0AIQGSC3vtHLgg/exec"
 COMPANY_PASSWORD = "Cinestar" 
 LOGO_URL = "logo.png" 
 
