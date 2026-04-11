@@ -143,115 +143,113 @@ if st.session_state.current_page == "login":
                     st.error("Sai mật khẩu! Vui lòng thử lại.")
 
 # =====================================================================
-# TRANG 2: WELCOME (UI/UX IMPROVED - CENTER HERO STYLE)
+# TRANG 2: LỜI CHÀO MỪNG (ĐỊNH DẠNG GIỮA, KHÔNG CUỘN)
 # =====================================================================
 elif st.session_state.current_page == "welcome":
 
     st.markdown("""
     <style>
-    /* ====== GLOBAL ====== */
-    html, body, [class*="css"]  {
-        font-family: 'Segoe UI', sans-serif;
+
+    /* ===== RESET STREAMLIT ===== */
+    .block-container {
+        padding: 0rem 2rem !important;
+        max-width: 100% !important;
     }
 
-    /* Background gradient */
-    [data-testid="stAppViewContainer"] {
-        background: linear-gradient(135deg, #f5f7fa, #e9ecf5);
+    header, footer {
+        visibility: hidden;
     }
 
-    /* Center layout */
-    [data-testid="stMainBlockContainer"] {
+    /* ===== BACKGROUND ===== */
+    .main {
+        background: #f4f6fb;
+    }
+
+    /* ===== WRAPPER ===== */
+    .wrapper {
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 100vh;
-        padding: 0 !important;
+        height: 90vh;
     }
 
-    /* ====== CARD ====== */
-    .welcome-card {
+    /* ===== CARD ===== */
+    .card {
         background: white;
-        padding: 50px 60px;
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-        max-width: 800px;
-        text-align: center;
-        animation: fadeIn 0.6s ease-in-out;
+        padding: 40px 60px;
+        border-radius: 16px;
+        width: 720px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
     }
 
-    @keyframes fadeIn {
-        from {opacity: 0; transform: translateY(20px);}
-        to {opacity: 1; transform: translateY(0);}
-    }
-
-    /* ====== LOGO ====== */
+    /* ===== LOGO ===== */
     .logo {
         margin-bottom: 10px;
     }
 
-    /* ====== TITLES ====== */
+    /* ===== TITLE ===== */
     .title {
-        font-size: 34px;
+        font-size: 30px;
         font-weight: 700;
         margin-bottom: 5px;
-        color: #222;
     }
 
     .subtitle {
-        font-size: 20px;
-        font-weight: 600;
-        color: #6f42c1;
-        margin-bottom: 25px;
-    }
-
-    /* ====== CONTENT ====== */
-    .highlight {
         font-size: 18px;
+        color: #6f42c1;
         font-weight: 600;
-        margin-bottom: 15px;
-    }
-
-    .description {
-        font-size: 15px;
-        color: #555;
-        line-height: 1.6;
         margin-bottom: 20px;
     }
 
-    .note {
-        font-size: 14px;
-        color: #888;
-        font-style: italic;
-        margin-bottom: 30px;
+    /* ===== TEXT ===== */
+    .highlight {
+        font-weight: 600;
+        margin-bottom: 10px;
     }
 
-    /* ====== BUTTON ====== */
+    .desc {
+        color: #555;
+        font-size: 14px;
+        line-height: 1.6;
+        margin-bottom: 15px;
+    }
+
+    .note {
+        font-size: 13px;
+        color: #888;
+        font-style: italic;
+        margin-bottom: 25px;
+    }
+
+    /* ===== BUTTON ===== */
+    div.stButton {
+        text-align: center;
+    }
+
     div.stButton > button {
-        background: linear-gradient(135deg, #6f42c1, #8e5cf6);
+        background: #6f42c1;
         color: white;
-        border: none;
-        padding: 14px 20px;
-        font-size: 16px;
+        border-radius: 8px;
+        padding: 12px 30px;
         font-weight: 600;
-        border-radius: 12px;
-        transition: all 0.25s ease;
-        box-shadow: 0 5px 15px rgba(111,66,193,0.3);
+        border: none;
+        width: auto !important;
     }
 
     div.stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(111,66,193,0.4);
+        background: #5936a2;
     }
 
     </style>
     """, unsafe_allow_html=True)
 
-    # ====== CARD START ======
-    st.markdown('<div class="welcome-card">', unsafe_allow_html=True)
+    # ===== WRAPPER START =====
+    st.markdown('<div class="wrapper">', unsafe_allow_html=True)
+    st.markdown('<div class="card">', unsafe_allow_html=True)
 
     try:
         st.markdown('<div class="logo">', unsafe_allow_html=True)
-        st.image(LOGO_URL, width=180)
+        st.image(LOGO_URL, width=140)
         st.markdown('</div>', unsafe_allow_html=True)
     except:
         pass
@@ -262,20 +260,21 @@ elif st.session_state.current_page == "welcome":
     st.markdown('<div class="highlight">Hãy để người trải nghiệm trực tiếp lên tiếng!</div>', unsafe_allow_html=True)
 
     st.markdown("""
-        <div class="description">
-        Chào mừng bạn đến với hệ thống đánh giá chất lượng nhà cung cấp định kỳ.<br>
-        Ý kiến của bạn là cơ sở quan trọng giúp công ty đánh giá đúng năng lực đối tác,
-        từ đó nâng cao chất lượng dịch vụ và tối ưu vận hành.
-        </div>
+    <div class="desc">
+    Chào mừng bạn đến với hệ thống đánh giá nhà cung cấp định kỳ.<br>
+    Ý kiến của bạn giúp công ty đánh giá đúng năng lực đối tác và cải thiện chất lượng dịch vụ.
+    </div>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div class="note">Hãy dành ít phút để hoàn thành khảo sát một cách tâm huyết nhé!</div>', unsafe_allow_html=True)
+    st.markdown('<div class="note">Hãy dành ít phút để hoàn thành khảo sát nhé.</div>', unsafe_allow_html=True)
 
-    if st.button("🚀 BẮT ĐẦU ĐÁNH GIÁ NGAY", use_container_width=True):
+    if st.button("🚀 Bắt đầu đánh giá"):
         st.session_state.current_page = "evaluation"
         st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
 # =====================================================================
 # TRANG 3: KHU VỰC THỰC HIỆN ĐÁNH GIÁ (MAIN APP)
 # =====================================================================
