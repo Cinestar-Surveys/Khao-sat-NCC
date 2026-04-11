@@ -661,54 +661,55 @@ elif st.session_state.current_page == "evaluation":
                         # Hiển thị theo từng Nhóm.
                         # Trong mỗi Nhóm sẽ liệt kê toàn bộ câu hỏi/tiêu chí của nhóm đó.
                         for group_name, group_df in df_q_filtered.groupby("Nhóm", sort=False):
-                            st.markdown(f"### {group_name}")
+                            with st.container(border=True):
+                                st.markdown(f"### {group_name}")
 
-                            criteria_in_group = list(dict.fromkeys(group_df["Tiêu chí"].dropna().astype(str).tolist()))
+                                criteria_in_group = list(dict.fromkeys(group_df["Tiêu chí"].dropna().astype(str).tolist()))
 
-                            for criterion in criteria_in_group:
-                                st.markdown(f"**{criterion}**")
-                                options_df = group_df[group_df["Tiêu chí"].astype(str) == criterion].copy()
-                                choice_options = list(
-                                    dict.fromkeys(options_df["Lựa chọn"].dropna().astype(str).tolist())
-                                )
-
-                                if not choice_options:
-                                    st.warning(f"Tiêu chí '{criterion}' hiện chưa có lựa chọn đánh giá trong file Excel.")
-                                    unanswered_questions.append(f"{group_name} - {criterion}")
-                                    continue
-
-                                user_choice = st.radio(
-                                    "Chọn mức đánh giá",
-                                    choice_options,
-                                    key=f"q_{selected_dept}_{group_name}_{criterion}_{current_ncc}",
-                                    index=None,
-                                    label_visibility="collapsed",
-                                )
-
-                                if user_choice is None:
-                                    unanswered_questions.append(f"{group_name} - {criterion}")
-                                else:
-                                    score_series = options_df.loc[
-                                        options_df["Lựa chọn"].astype(str) == str(user_choice), "Điểm"
-                                    ]
-                                    score_raw = score_series.iloc[0]
-                                    # Ép về float để tránh lỗi JSON khi gửi dữ liệu
-                                    score = float(score_raw)
-
-                                    # Mỗi câu trả lời tạo thành một dòng dữ liệu sẽ gửi đi sau cùng
-                                    current_answers.append(
-                                        {
-                                            "Thời gian": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                            "Họ tên NV đánh giá": evaluator_name,
-                                            "Bộ phận": selected_dept,
-                                            "Site": selected_site,
-                                            "Tên NCC": current_ncc,
-                                            "Nhóm": group_name,
-                                            "Tiêu chí": criterion,
-                                            "Lựa chọn": user_choice,
-                                            "Điểm": score,
-                                        }
+                                for criterion in criteria_in_group:
+                                    st.markdown(f"**{criterion}**")
+                                    options_df = group_df[group_df["Tiêu chí"].astype(str) == criterion].copy()
+                                    choice_options = list(
+                                        dict.fromkeys(options_df["Lựa chọn"].dropna().astype(str).tolist())
                                     )
+
+                                    if not choice_options:
+                                        st.warning(f"Tiêu chí '{criterion}' hiện chưa có lựa chọn đánh giá trong file Excel.")
+                                        unanswered_questions.append(f"{group_name} - {criterion}")
+                                        continue
+
+                                    user_choice = st.radio(
+                                        "Chọn mức đánh giá",
+                                        choice_options,
+                                        key=f"q_{selected_dept}_{group_name}_{criterion}_{current_ncc}",
+                                        index=None,
+                                        label_visibility="collapsed",
+                                    )
+
+                                    if user_choice is None:
+                                        unanswered_questions.append(f"{group_name} - {criterion}")
+                                    else:
+                                        score_series = options_df.loc[
+                                            options_df["Lựa chọn"].astype(str) == str(user_choice), "Điểm"
+                                        ]
+                                        score_raw = score_series.iloc[0]
+                                        # Ép về float để tránh lỗi JSON khi gửi dữ liệu
+                                        score = float(score_raw)
+
+                                        # Mỗi câu trả lời tạo thành một dòng dữ liệu sẽ gửi đi sau cùng
+                                        current_answers.append(
+                                            {
+                                                "Thời gian": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                "Họ tên NV đánh giá": evaluator_name,
+                                                "Bộ phận": selected_dept,
+                                                "Site": selected_site,
+                                                "Tên NCC": current_ncc,
+                                                "Nhóm": group_name,
+                                                "Tiêu chí": criterion,
+                                                "Lựa chọn": user_choice,
+                                                "Điểm": score,
+                                            }
+                                        )
 
                     if st.form_submit_button("Lưu & Cập nhật kết quả NCC này"):
                         if unanswered_questions:
