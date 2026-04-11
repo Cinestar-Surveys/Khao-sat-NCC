@@ -154,6 +154,10 @@ if "last_api_status" not in st.session_state:
     st.session_state.last_api_status = None
 if "last_api_response" not in st.session_state:
     st.session_state.last_api_response = None
+if "confirm_submit_results" not in st.session_state:
+    st.session_state.confirm_submit_results = False
+if "edited_nccs" not in st.session_state:
+    st.session_state.edited_nccs = []
 
 
 @st.cache_data
@@ -237,8 +241,15 @@ def replace_ncc_results(ncc_name, new_answers):
     ]
     st.session_state.all_results_buffer.extend(new_answers)
 
-    if ncc_name not in st.session_state.evaluated_nccs:
+    was_already_saved = ncc_name in st.session_state.evaluated_nccs
+
+    if not was_already_saved:
         st.session_state.evaluated_nccs.append(ncc_name)
+    elif ncc_name not in st.session_state.edited_nccs:
+        st.session_state.edited_nccs.append(ncc_name)
+
+    # Khi có thay đổi dữ liệu, cần xác nhận lại trước khi gửi toàn bộ kết quả.
+    st.session_state.confirm_submit_results = False
 
 
 def clear_question_widget_states():
@@ -247,6 +258,22 @@ def clear_question_widget_states():
     for key in list(st.session_state.keys()):
         if str(key).startswith("q_"):
             del st.session_state[key]
+
+
+def get_saved_answers_map(site_name, dept_name, ncc_name):
+    # Lấy lại các đáp án đã lưu trước đó của đúng site/bộ phận/NCC
+    # để khi mở lại NCC, form có thể hiển thị sẵn lựa chọn cũ.
+    saved_rows = [
+        row
+        for row in st.session_state.all_results_buffer
+        if row.get("Site") == site_name
+        and row.get("Bộ phận") == dept_name
+        and row.get("Tên NCC") == ncc_name
+    ]
+    return {
+        (str(row.get("Nhóm", "")), str(row.get("Tiêu chí", ""))): str(row.get("Lựa chọn", ""))
+        for row in saved_rows
+    }
 
 
 def get_next_pending_ncc(list_ncc):
@@ -261,6 +288,16 @@ def get_next_pending_ncc(list_ncc):
         return st.session_state.current_ncc_selector
 
     return list_ncc[0] if list_ncc else ""
+
+
+def format_ncc_status_label(ncc_name, evaluated_nccs_for_site):
+    # Streamlit selectbox không hỗ trợ tô màu từng option như HTML custom,
+    # nên dùng emoji màu để đồng bộ trạng thái trong dropdown.
+    if ncc_name in st.session_state.edited_nccs:
+        return f"🟠 Đã chỉnh sửa | {ncc_name}"
+    if ncc_name in evaluated_nccs_for_site:
+        return f"🟢 Đã lưu | {ncc_name}"
+    return f"🟡 Chưa hoàn tất | {ncc_name}"
 
 
 def build_site_password(site_name):
@@ -618,7 +655,9 @@ elif st.session_state.current_page == "evaluation":
             st.write(f"**Đã hoàn thành:** {evaluated_count} / {total_ncc} NCC")
             st.write("---")
             for ncc in list_ncc:
-                if ncc in evaluated_nccs_for_site:
+                if ncc in st.session_state.edited_nccs:
+                    st.warning(f"✏️ Đã chỉnh sửa: {ncc}")
+                elif ncc in evaluated_nccs_for_site:
                     st.success(f"✅ {ncc}")
                 else:
                     st.info(f"⏳ {ncc}")
@@ -639,12 +678,15 @@ elif st.session_state.current_page == "evaluation":
                     "👉 Chọn NCC để đánh giá hoặc đánh giá lại:",
                     list_ncc,
                     key="current_ncc_widget",
-                    format_func=lambda ncc: f"✅ {ncc}" if ncc in evaluated_nccs_for_site else f"⏳ {ncc}",
+                    format_func=lambda ncc: format_ncc_status_label(ncc, evaluated_nccs_for_site),
                 )
                 st.session_state.current_ncc_selector = current_ncc
+                st.caption("🟡 Chưa hoàn tất   |   🟢 Đã lưu   |   🟠 Đã chỉnh sửa")
 
                 if current_ncc in evaluated_nccs_for_site:
                     st.info("NCC này đã được lưu trước đó. Nếu bạn chỉnh lại và bấm lưu, hệ thống sẽ thay kết quả cũ bằng kết quả mới.")
+                if current_ncc in st.session_state.edited_nccs:
+                    st.caption("✏️ Đã chỉnh sửa: NCC này đã được cập nhật lại sau lần lưu đầu tiên.")
 
                 with st.form(key=f"form_{current_ncc}"):
                     # Lọc câu hỏi đúng với bộ phận mà người dùng đã chọn
@@ -652,6 +694,7 @@ elif st.session_state.current_page == "evaluation":
                     df_q_filtered = df_questions[
                         df_questions["Câu hỏi dành cho bộ phận"].astype(str).str.contains(selected_dept, na=False, case=False)
                     ]
+                    saved_answers_map = get_saved_answers_map(selected_site, selected_dept, current_ncc)
                     current_answers = []
                     unanswered_questions = []
 
@@ -672,16 +715,21 @@ elif st.session_state.current_page == "evaluation":
                                     choice_options = list(
                                         dict.fromkeys(options_df["Lựa chọn"].dropna().astype(str).tolist())
                                     )
+                                    question_key = f"q_{selected_dept}_{group_name}_{criterion}_{current_ncc}"
 
                                     if not choice_options:
                                         st.warning(f"Tiêu chí '{criterion}' hiện chưa có lựa chọn đánh giá trong file Excel.")
                                         unanswered_questions.append(f"{group_name} - {criterion}")
                                         continue
 
+                                    saved_choice = saved_answers_map.get((str(group_name), str(criterion)))
+                                    if question_key not in st.session_state and saved_choice in choice_options:
+                                        st.session_state[question_key] = saved_choice
+
                                     user_choice = st.radio(
                                         "Chọn mức đánh giá",
                                         choice_options,
-                                        key=f"q_{selected_dept}_{group_name}_{criterion}_{current_ncc}",
+                                        key=question_key,
                                         index=None,
                                         label_visibility="collapsed",
                                     )
@@ -697,10 +745,10 @@ elif st.session_state.current_page == "evaluation":
                                         score = float(score_raw)
 
                                         # Mỗi câu trả lời tạo thành một dòng dữ liệu sẽ gửi đi sau cùng
-                                        current_answers.append(
-                                            {
-                                                "Thời gian": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                                "Họ tên NV đánh giá": evaluator_name,
+                                    current_answers.append(
+                                        {
+                                            "Thời gian": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                            "Họ tên NV đánh giá": evaluator_name,
                                                 "Bộ phận": selected_dept,
                                                 "Site": selected_site,
                                                 "Tên NCC": current_ncc,
@@ -710,6 +758,13 @@ elif st.session_state.current_page == "evaluation":
                                                 "Điểm": score,
                                             }
                                         )
+
+                        if current_answers:
+                            total_temp_score = sum(float(answer["Điểm"]) for answer in current_answers)
+                            answered_count = len(current_answers)
+                            st.info(f"📊 Tổng điểm tạm hiện tại của NCC này: {total_temp_score:.2f} điểm | Đã chọn {answered_count} tiêu chí")
+                        else:
+                            st.caption("📊 Tổng điểm tạm sẽ hiển thị khi bạn bắt đầu chọn các tiêu chí đánh giá.")
 
                     if st.form_submit_button("Lưu & Cập nhật kết quả NCC này"):
                         if unanswered_questions:
@@ -739,7 +794,17 @@ elif st.session_state.current_page == "evaluation":
                 # Cho phép xem lại dữ liệu trước khi bấm gửi
                 st.dataframe(pd.DataFrame(st.session_state.all_results_buffer), use_container_width=True)
 
-            if st.button("🚀 GỬI KẾT QUẢ VÀO HỆ THỐNG", type="primary", use_container_width=True):
+            st.checkbox(
+                "Tôi xác nhận đã kiểm tra đầy đủ kết quả đánh giá trước khi gửi vào hệ thống.",
+                key="confirm_submit_results",
+            )
+
+            if st.button(
+                "🚀 GỬI KẾT QUẢ VÀO HỆ THỐNG",
+                type="primary",
+                use_container_width=True,
+                disabled=not st.session_state.confirm_submit_results,
+            ):
                 with st.spinner("Đang truyền dữ liệu bảo mật..."):
                     try:
                         # Gửi dữ liệu sang Google Apps Script
@@ -756,9 +821,11 @@ elif st.session_state.current_page == "evaluation":
                             st.write("Phản hồi từ máy chủ:", response.text)
 
                             st.session_state.evaluated_nccs = []
+                            st.session_state.edited_nccs = []
                             st.session_state.all_results_buffer = []
                             st.session_state.current_ncc_selector = ""
                             st.session_state.current_ncc_widget = ""
+                            st.session_state.confirm_submit_results = False
                             clear_question_widget_states()
                             time.sleep(2)
                             st.rerun()
