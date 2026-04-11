@@ -6,6 +6,7 @@ import time
 import pandas as pd
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 
 
 # =========================================================
@@ -142,10 +143,16 @@ if "current_page" not in st.session_state:
     st.session_state.current_page = "login"
 if "selected_site" not in st.session_state:
     st.session_state.selected_site = ""
+if "selected_dept" not in st.session_state:
+    st.session_state.selected_dept = "-- Chọn Bộ phận --"
+if "evaluator_name" not in st.session_state:
+    st.session_state.evaluator_name = ""
 if "current_ncc_selector" not in st.session_state:
     st.session_state.current_ncc_selector = ""
 if "current_ncc_widget" not in st.session_state:
     st.session_state.current_ncc_widget = ""
+if "scroll_to_top" not in st.session_state:
+    st.session_state.scroll_to_top = False
 if "evaluated_nccs" not in st.session_state:
     st.session_state.evaluated_nccs = []
 if "all_results_buffer" not in st.session_state:
@@ -250,6 +257,8 @@ def replace_ncc_results(ncc_name, new_answers):
 
     # Khi có thay đổi dữ liệu, cần xác nhận lại trước khi gửi toàn bộ kết quả.
     st.session_state.confirm_submit_results = False
+    st.session_state.last_api_status = None
+    st.session_state.last_api_response = None
 
 
 def clear_question_widget_states():
@@ -258,6 +267,58 @@ def clear_question_widget_states():
     for key in list(st.session_state.keys()):
         if str(key).startswith("q_"):
             del st.session_state[key]
+
+
+def scroll_page_to_top():
+    # Sau khi lưu một NCC hoặc chuyển trang review, cuộn về đầu trang
+    # để người dùng tiếp tục thao tác ở khu vực điều hướng chính.
+    components.html(
+        """
+        <script>
+        const targetWindow = window.parent || window;
+        if (targetWindow && typeof targetWindow.scrollTo === "function") {
+            targetWindow.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        </script>
+        """,
+        height=0,
+    )
+
+
+def reset_evaluation_flow():
+    # Làm sạch toàn bộ dữ liệu tạm của một phiên đánh giá
+    # nhưng vẫn giữ lại site đang đăng nhập.
+    st.session_state.evaluated_nccs = []
+    st.session_state.edited_nccs = []
+    st.session_state.all_results_buffer = []
+    st.session_state.current_ncc_selector = ""
+    st.session_state.current_ncc_widget = ""
+    st.session_state.confirm_submit_results = False
+    st.session_state.last_api_status = None
+    st.session_state.last_api_response = None
+    st.session_state.selected_dept = "-- Chọn Bộ phận --"
+    st.session_state.evaluator_name = ""
+    st.session_state.scroll_to_top = False
+    clear_question_widget_states()
+
+
+def build_review_summary_df(rows):
+    # Tạo bảng tóm tắt theo từng NCC để trang review dễ kiểm tra hơn.
+    if not rows:
+        return pd.DataFrame()
+
+    summary_df = (
+        pd.DataFrame(rows)
+        .groupby("Tên NCC", as_index=False)
+        .agg(
+            **{
+                "Số tiêu chí": ("Tiêu chí", "count"),
+                "Tổng điểm": ("Điểm", "sum"),
+            }
+        )
+    )
+    summary_df["Tổng điểm"] = summary_df["Tổng điểm"].astype(float).round(2)
+    return summary_df
 
 
 def get_saved_answers_map(site_name, dept_name, ncc_name):
@@ -614,6 +675,10 @@ elif st.session_state.current_page == "evaluation":
     st.markdown("<h2>📋 BẢNG ĐÁNH GIÁ CHI TIẾT</h2>", unsafe_allow_html=True)
     st.caption("Vui lòng điền thông tin và hoàn thành toàn bộ danh sách nhà cung cấp của Site.")
 
+    if st.session_state.scroll_to_top:
+        scroll_page_to_top()
+        st.session_state.scroll_to_top = False
+
     if not st.session_state.selected_site:
         st.warning("Chưa có Site đăng nhập. Vui lòng quay lại màn hình đăng nhập.")
         st.session_state.current_page = "login"
@@ -629,16 +694,18 @@ elif st.session_state.current_page == "evaluation":
     with st.container(border=True):
         # Khối nhập thông tin chung của người đánh giá
         col1, col2 = st.columns(2)
-        evaluator_name = col1.text_input("👤 Họ tên nhân viên đánh giá")
+        evaluator_name = col1.text_input("👤 Họ tên nhân viên đánh giá", key="evaluator_name")
         st.info(f"🏢 Site đăng nhập: {st.session_state.selected_site}")
-        selected_dept = col2.selectbox(
-            "📁 Chọn bộ phận chuyên môn",
-            ["-- Chọn Bộ phận --"] + (df_depts[df_depts.columns[0]].dropna().unique().tolist() if not df_depts.empty else []),
+        dept_options = ["-- Chọn Bộ phận --"] + (
+            df_depts[df_depts.columns[0]].dropna().unique().tolist() if not df_depts.empty else []
         )
+        if st.session_state.selected_dept not in dept_options:
+            st.session_state.selected_dept = "-- Chọn Bộ phận --"
+        selected_dept = col2.selectbox("📁 Chọn bộ phận chuyên môn", dept_options, key="selected_dept")
 
     selected_site = st.session_state.selected_site
 
-    if selected_site and selected_dept != "-- Chọn Bộ phận --" and evaluator_name:
+    if selected_site and selected_dept != "-- Chọn Bộ phận --" and evaluator_name.strip():
         # Lấy danh sách NCC của site đang chọn
         list_ncc = df_sites[df_sites["Site"] == selected_site]["NCC"].dropna().tolist()
         total_ncc = len(list_ncc)
@@ -646,206 +713,264 @@ elif st.session_state.current_page == "evaluation":
         evaluated_count = len(evaluated_nccs_for_site)
 
         st.divider()
-        left_col, right_col = st.columns([1, 2.5])
-
-        with left_col:
-            # Cột trái hiển thị tiến độ đánh giá
-            st.markdown(f"<h3>🎯 Tiến độ Site: {selected_site}</h3>", unsafe_allow_html=True)
-            st.progress(evaluated_count / total_ncc if total_ncc > 0 else 0)
-            st.write(f"**Đã hoàn thành:** {evaluated_count} / {total_ncc} NCC")
-            st.write("---")
-            for ncc in list_ncc:
-                if ncc in st.session_state.edited_nccs:
-                    st.warning(f"✏️ Đã chỉnh sửa: {ncc}")
-                elif ncc in evaluated_nccs_for_site:
-                    st.success(f"✅ {ncc}")
+        if list_ncc:
+            # Đưa tiến độ lên đầu trang, giữ lại dropdown đánh giá ở khối chính.
+            header_col, action_col = st.columns([2.3, 1.2])
+            with header_col:
+                st.markdown(f"<h3>🎯 Tiến độ Site: {selected_site}</h3>", unsafe_allow_html=True)
+                st.progress(evaluated_count / total_ncc if total_ncc > 0 else 0)
+                st.write(f"**Đã hoàn thành:** {evaluated_count} / {total_ncc} NCC")
+                if evaluated_count < total_ncc:
+                    st.caption(f"NCC tiếp theo được gợi ý: {get_next_pending_ncc(list_ncc)}")
                 else:
-                    st.info(f"⏳ {ncc}")
+                    st.caption("Bạn đã hoàn tất toàn bộ NCC. Có thể review lại hoặc chọn NCC bên dưới để chỉnh sửa.")
 
-        with right_col:
-            if list_ncc:
-                # Tự động trỏ tới NCC chưa hoàn thành tiếp theo để thao tác nhanh hơn.
-                if st.session_state.current_ncc_selector not in list_ncc:
-                    st.session_state.current_ncc_selector = get_next_pending_ncc(list_ncc)
-                if st.session_state.current_ncc_widget not in list_ncc:
-                    st.session_state.current_ncc_widget = st.session_state.current_ncc_selector
-                elif st.session_state.current_ncc_widget != st.session_state.current_ncc_selector:
-                    st.session_state.current_ncc_widget = st.session_state.current_ncc_selector
+            with action_col:
+                if total_ncc > 0 and evaluated_count == total_ncc:
+                    st.success("Đã sẵn sàng review và nộp kết quả.")
+                    if st.button("🔍 Review lại & Up kết quả", type="primary", use_container_width=True):
+                        st.session_state.confirm_submit_results = False
+                        st.session_state.current_page = "review_submit"
+                        st.session_state.scroll_to_top = True
+                        st.rerun()
+                else:
+                    remaining_count = total_ncc - evaluated_count
+                    st.info(f"Còn {remaining_count} NCC cần đánh giá.")
 
-                # Cột phải là form đánh giá cho NCC hiện tại.
-                # Người dùng có thể chọn lại cả NCC đã hoàn thành để sửa kết quả.
-                current_ncc = st.selectbox(
-                    "👉 Chọn NCC để đánh giá hoặc đánh giá lại:",
-                    list_ncc,
-                    key="current_ncc_widget",
-                    format_func=lambda ncc: format_ncc_status_label(ncc, evaluated_nccs_for_site),
-                )
-                st.session_state.current_ncc_selector = current_ncc
-                st.caption("🟡 Chưa hoàn tất   |   🟢 Đã lưu   |   🟠 Đã chỉnh sửa")
+            # Tự động trỏ tới NCC chưa hoàn thành tiếp theo để thao tác nhanh hơn.
+            if st.session_state.current_ncc_selector not in list_ncc:
+                st.session_state.current_ncc_selector = get_next_pending_ncc(list_ncc)
+            if st.session_state.current_ncc_widget not in list_ncc:
+                st.session_state.current_ncc_widget = st.session_state.current_ncc_selector
+            elif st.session_state.current_ncc_widget != st.session_state.current_ncc_selector:
+                st.session_state.current_ncc_widget = st.session_state.current_ncc_selector
 
-                if current_ncc in evaluated_nccs_for_site:
-                    st.info("NCC này đã được lưu trước đó. Nếu bạn chỉnh lại và bấm lưu, hệ thống sẽ thay kết quả cũ bằng kết quả mới.")
-                if current_ncc in st.session_state.edited_nccs:
-                    st.caption("✏️ Đã chỉnh sửa: NCC này đã được cập nhật lại sau lần lưu đầu tiên.")
+            # Chỉ giữ dropdown chọn NCC, không hiển thị danh sách NCC riêng bên cạnh.
+            current_ncc = st.selectbox(
+                "👉 Chọn NCC để đánh giá hoặc đánh giá lại:",
+                list_ncc,
+                key="current_ncc_widget",
+                format_func=lambda ncc: format_ncc_status_label(ncc, evaluated_nccs_for_site),
+            )
+            st.session_state.current_ncc_selector = current_ncc
+            st.caption("🟡 Chưa hoàn tất   |   🟢 Đã lưu   |   🟠 Đã chỉnh sửa")
 
-                with st.form(key=f"form_{current_ncc}"):
-                    # Lọc câu hỏi đúng với bộ phận mà người dùng đã chọn
-                    st.markdown(f"<h4 style='color: #6f42c1;'>Đang đánh giá: {current_ncc}</h4>", unsafe_allow_html=True)
-                    df_q_filtered = df_questions[
-                        df_questions["Câu hỏi dành cho bộ phận"].astype(str).str.contains(selected_dept, na=False, case=False)
-                    ]
-                    saved_answers_map = get_saved_answers_map(selected_site, selected_dept, current_ncc)
-                    current_answers = []
-                    unanswered_questions = []
+            if current_ncc in evaluated_nccs_for_site:
+                st.info("NCC này đã được lưu trước đó. Nếu bạn chỉnh lại và bấm lưu, hệ thống sẽ thay kết quả cũ bằng kết quả mới.")
+            if current_ncc in st.session_state.edited_nccs:
+                st.caption("✏️ Đã chỉnh sửa: NCC này đã được cập nhật lại sau lần lưu đầu tiên.")
 
-                    if df_q_filtered.empty:
-                        st.warning("Bộ phận của bạn chưa có bộ câu hỏi khảo sát.")
-                    else:
-                        # Hiển thị theo từng Nhóm.
-                        # Trong mỗi Nhóm sẽ liệt kê toàn bộ câu hỏi/tiêu chí của nhóm đó.
-                        for group_name, group_df in df_q_filtered.groupby("Nhóm", sort=False):
-                            with st.container(border=True):
-                                st.markdown(f"### {group_name}")
+            with st.form(key=f"form_{current_ncc}"):
+                # Lọc câu hỏi đúng với bộ phận mà người dùng đã chọn
+                st.markdown(f"<h4 style='color: #6f42c1;'>Đang đánh giá: {current_ncc}</h4>", unsafe_allow_html=True)
+                df_q_filtered = df_questions[
+                    df_questions["Câu hỏi dành cho bộ phận"].astype(str).str.contains(selected_dept, na=False, case=False)
+                ]
+                saved_answers_map = get_saved_answers_map(selected_site, selected_dept, current_ncc)
+                current_answers = []
+                unanswered_questions = []
 
-                                criteria_in_group = list(dict.fromkeys(group_df["Tiêu chí"].dropna().astype(str).tolist()))
+                if df_q_filtered.empty:
+                    st.warning("Bộ phận của bạn chưa có bộ câu hỏi khảo sát.")
+                else:
+                    # Hiển thị theo từng Nhóm.
+                    # Trong mỗi Nhóm sẽ liệt kê toàn bộ câu hỏi/tiêu chí của nhóm đó.
+                    for group_name, group_df in df_q_filtered.groupby("Nhóm", sort=False):
+                        with st.container(border=True):
+                            st.markdown(f"### {group_name}")
 
-                                for criterion in criteria_in_group:
-                                    st.markdown(f"**{criterion}**")
-                                    options_df = group_df[group_df["Tiêu chí"].astype(str) == criterion].copy()
-                                    choice_options = list(
-                                        dict.fromkeys(options_df["Lựa chọn"].dropna().astype(str).tolist())
-                                    )
-                                    question_key = f"q_{selected_dept}_{group_name}_{criterion}_{current_ncc}"
+                            criteria_in_group = list(dict.fromkeys(group_df["Tiêu chí"].dropna().astype(str).tolist()))
 
-                                    if not choice_options:
-                                        st.warning(f"Tiêu chí '{criterion}' hiện chưa có lựa chọn đánh giá trong file Excel.")
+                            for criterion in criteria_in_group:
+                                st.markdown(f"**{criterion}**")
+                                options_df = group_df[group_df["Tiêu chí"].astype(str) == criterion].copy()
+                                choice_options = list(dict.fromkeys(options_df["Lựa chọn"].dropna().astype(str).tolist()))
+                                question_key = f"q_{selected_dept}_{group_name}_{criterion}_{current_ncc}"
+
+                                if not choice_options:
+                                    st.warning(f"Tiêu chí '{criterion}' hiện chưa có lựa chọn đánh giá trong file Excel.")
+                                    unanswered_questions.append(f"{group_name} - {criterion}")
+                                    continue
+
+                                saved_choice = saved_answers_map.get((str(group_name), str(criterion)))
+                                if question_key not in st.session_state and saved_choice in choice_options:
+                                    st.session_state[question_key] = saved_choice
+
+                                user_choice = st.radio(
+                                    "Chọn mức đánh giá",
+                                    choice_options,
+                                    key=question_key,
+                                    index=None,
+                                    label_visibility="collapsed",
+                                )
+
+                                if user_choice is None:
+                                    unanswered_questions.append(f"{group_name} - {criterion}")
+                                else:
+                                    score_series = options_df.loc[
+                                        options_df["Lựa chọn"].astype(str) == str(user_choice), "Điểm"
+                                    ]
+                                    if score_series.empty:
                                         unanswered_questions.append(f"{group_name} - {criterion}")
                                         continue
+                                    score_raw = score_series.iloc[0]
+                                    # Ép về float để tránh lỗi JSON khi gửi dữ liệu
+                                    score = float(score_raw)
 
-                                    saved_choice = saved_answers_map.get((str(group_name), str(criterion)))
-                                    if question_key not in st.session_state and saved_choice in choice_options:
-                                        st.session_state[question_key] = saved_choice
-
-                                    user_choice = st.radio(
-                                        "Chọn mức đánh giá",
-                                        choice_options,
-                                        key=question_key,
-                                        index=None,
-                                        label_visibility="collapsed",
+                                    # Mỗi câu trả lời tạo thành một dòng dữ liệu sẽ gửi đi sau cùng
+                                    current_answers.append(
+                                        {
+                                            "Thời gian": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                            "Họ tên NV đánh giá": evaluator_name.strip(),
+                                            "Bộ phận": selected_dept,
+                                            "Site": selected_site,
+                                            "Tên NCC": current_ncc,
+                                            "Nhóm": group_name,
+                                            "Tiêu chí": criterion,
+                                            "Lựa chọn": user_choice,
+                                            "Điểm": score,
+                                        }
                                     )
 
-                                    if user_choice is None:
-                                        unanswered_questions.append(f"{group_name} - {criterion}")
-                                    else:
-                                        score_series = options_df.loc[
-                                            options_df["Lựa chọn"].astype(str) == str(user_choice), "Điểm"
-                                        ]
-                                        if score_series.empty:
-                                            unanswered_questions.append(f"{group_name} - {criterion}")
-                                            continue
-                                        score_raw = score_series.iloc[0]
-                                        # Ép về float để tránh lỗi JSON khi gửi dữ liệu
-                                        score = float(score_raw)
+                    if current_answers:
+                        total_temp_score = sum(float(answer["Điểm"]) for answer in current_answers)
+                        answered_count = len(current_answers)
+                        st.info(
+                            f"📊 Tổng điểm tạm hiện tại của NCC này: {total_temp_score:.2f} điểm | Đã chọn {answered_count} tiêu chí"
+                        )
+                    else:
+                        st.caption("📊 Tổng điểm tạm sẽ hiển thị khi bạn bắt đầu chọn các tiêu chí đánh giá.")
 
-                                        # Mỗi câu trả lời tạo thành một dòng dữ liệu sẽ gửi đi sau cùng
-                                        current_answers.append(
-                                            {
-                                                "Thời gian": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                                "Họ tên NV đánh giá": evaluator_name,
-                                                "Bộ phận": selected_dept,
-                                                "Site": selected_site,
-                                                "Tên NCC": current_ncc,
-                                                "Nhóm": group_name,
-                                                "Tiêu chí": criterion,
-                                                "Lựa chọn": user_choice,
-                                                "Điểm": score,
-                                            }
-                                        )
+                if st.form_submit_button("Lưu & Cập nhật kết quả NCC này"):
+                    if unanswered_questions:
+                        st.error("Bạn cần chọn đầy đủ tất cả tiêu chí trước khi lưu.")
+                        st.caption(
+                            "Các tiêu chí chưa chọn: "
+                            + "; ".join(unanswered_questions[:5])
+                            + ("..." if len(unanswered_questions) > 5 else "")
+                        )
+                    else:
+                        # Chưa gửi lên Google ngay, chỉ lưu tạm vào session.
+                        # Nếu NCC này đã từng lưu thì dữ liệu mới sẽ ghi đè dữ liệu cũ.
+                        replace_ncc_results(current_ncc, current_answers)
+                        st.session_state.current_ncc_selector = get_next_pending_ncc(list_ncc)
+                        st.session_state.current_ncc_widget = st.session_state.current_ncc_selector
+                        st.session_state.scroll_to_top = True
+                        st.rerun()
+        else:
+            st.warning("Site này chưa có NCC nào trong file dữ liệu.")
+    else:
+        st.info("Điền họ tên và chọn bộ phận để hệ thống hiển thị form đánh giá NCC.")
 
-                        if current_answers:
-                            total_temp_score = sum(float(answer["Điểm"]) for answer in current_answers)
-                            answered_count = len(current_answers)
-                            st.info(f"📊 Tổng điểm tạm hiện tại của NCC này: {total_temp_score:.2f} điểm | Đã chọn {answered_count} tiêu chí")
-                        else:
-                            st.caption("📊 Tổng điểm tạm sẽ hiển thị khi bạn bắt đầu chọn các tiêu chí đánh giá.")
 
-                    if st.form_submit_button("Lưu & Cập nhật kết quả NCC này"):
-                        if unanswered_questions:
-                            st.error("Bạn cần chọn đầy đủ tất cả tiêu chí trước khi lưu.")
-                            st.caption(
-                                "Các tiêu chí chưa chọn: "
-                                + "; ".join(unanswered_questions[:5])
-                                + ("..." if len(unanswered_questions) > 5 else "")
-                            )
-                        else:
-                            # Chưa gửi lên Google ngay, chỉ lưu tạm vào session.
-                            # Nếu NCC này đã từng lưu thì dữ liệu mới sẽ ghi đè dữ liệu cũ.
-                            replace_ncc_results(current_ncc, current_answers)
-                            st.session_state.current_ncc_selector = get_next_pending_ncc(list_ncc)
-                            st.rerun()
-            else:
-                st.warning("Site này chưa có NCC nào trong file dữ liệu.")
+elif st.session_state.current_page == "review_submit":
+    try:
+        st.sidebar.image(LOGO_URL, use_container_width=True)
+    except Exception:
+        pass
 
-        if total_ncc > 0 and evaluated_count == total_ncc:
-            # Khi hoàn tất toàn bộ NCC, hiện khu vực gửi dữ liệu.
-            # Người dùng vẫn có thể quay lên phía trên để chọn lại một NCC và sửa kết quả.
-            st.success(f"🎉 Chúc mừng! Bạn đã hoàn thành đánh giá toàn bộ {total_ncc} NCC của {selected_site}.")
-            st.info(f"Số dòng chuẩn bị gửi: {len(st.session_state.all_results_buffer)}")
-            st.caption("Nếu cần chỉnh lại, bạn có thể chọn lại một NCC ở phía trên rồi lưu lại trước khi gửi hệ thống.")
+    st.sidebar.divider()
+    if st.sidebar.button("🚪 Thoát (Đăng xuất)"):
+        st.session_state.clear()
+        st.rerun()
 
-            with st.expander("Xem trước dữ liệu sẽ gửi"):
-                # Cho phép xem lại dữ liệu trước khi bấm gửi
-                st.dataframe(pd.DataFrame(st.session_state.all_results_buffer), use_container_width=True)
+    st.markdown("<h2>🧾 REVIEW & NỘP KẾT QUẢ</h2>", unsafe_allow_html=True)
+    st.caption("Kiểm tra lại dữ liệu trước khi gửi chính thức vào hệ thống.")
 
-            st.checkbox(
-                "Tôi xác nhận đã kiểm tra đầy đủ kết quả đánh giá trước khi gửi vào hệ thống.",
-                key="confirm_submit_results",
-            )
+    if st.session_state.scroll_to_top:
+        scroll_page_to_top()
+        st.session_state.scroll_to_top = False
 
-            if st.button(
-                "🚀 GỬI KẾT QUẢ VÀO HỆ THỐNG",
-                type="primary",
-                use_container_width=True,
-                disabled=not st.session_state.confirm_submit_results,
-            ):
-                with st.spinner("Đang truyền dữ liệu bảo mật..."):
-                    try:
-                        # Gửi dữ liệu sang Google Apps Script
-                        response, payload = send_results_to_google_sheet(st.session_state.all_results_buffer)
+    if not st.session_state.selected_site:
+        st.warning("Chưa có Site đăng nhập. Vui lòng quay lại màn hình đăng nhập.")
+        st.session_state.current_page = "login"
+        st.rerun()
 
-                        # Ghi lại phản hồi để tiện kiểm tra khi có lỗi
-                        st.session_state.last_api_status = response.status_code
-                        st.session_state.last_api_response = response.text
+    if not WEB_APP_URL:
+        st.warning("Chưa cấu hình WEB_APP_URL trong Streamlit secrets nên chưa thể gửi dữ liệu lên Google Sheet.")
 
-                        if response.status_code == 200:
-                            st.balloons()
-                            st.success("✅ Dữ liệu đã được gửi thành công tới Web App.")
-                            st.caption("Nếu Google Sheet vẫn chưa có dữ liệu, hãy kiểm tra mã Google Apps Script ở bước dưới.")
-                            st.write("Phản hồi từ máy chủ:", response.text)
+    df_sites, _, _ = load_input_files()
+    selected_site = st.session_state.selected_site
+    list_ncc = df_sites[df_sites["Site"] == selected_site]["NCC"].dropna().tolist()
+    total_ncc = len(list_ncc)
+    evaluated_nccs_for_site = [ncc for ncc in list_ncc if ncc in set(st.session_state.evaluated_nccs)]
+    evaluated_count = len(evaluated_nccs_for_site)
 
-                            st.session_state.evaluated_nccs = []
-                            st.session_state.edited_nccs = []
-                            st.session_state.all_results_buffer = []
-                            st.session_state.current_ncc_selector = ""
-                            st.session_state.current_ncc_widget = ""
-                            st.session_state.confirm_submit_results = False
-                            clear_question_widget_states()
-                            time.sleep(2)
-                            st.rerun()
-                        else:
-                            # Google phản hồi lỗi thì hiển thị chi tiết để debug
-                            st.error(f"Lỗi máy chủ Google. Status code: {response.status_code}")
-                            st.code(response.text or "(response rỗng)")
-                            st.caption("Nếu thấy lỗi 302/401/403, thường là Web App chưa deploy public đúng cách.")
+    top_col1, top_col2 = st.columns([1, 1])
+    with top_col1:
+        if st.button("⬅️ Quay lại chỉnh sửa", use_container_width=True):
+            st.session_state.current_page = "evaluation"
+            st.session_state.scroll_to_top = True
+            st.rerun()
+    with top_col2:
+        st.button("📤 Trang review sẵn sàng nộp", use_container_width=True, disabled=True)
 
-                    except requests.exceptions.RequestException as exc:
-                        # Lỗi kết nối như timeout, DNS, mạng...
-                        st.error(f"Lỗi khi gửi request tới Google Apps Script: {exc}")
-                    except Exception as exc:
-                        # Lỗi xử lý dữ liệu phía Python trước khi gửi
-                        st.error(f"Lỗi xử lý dữ liệu trước khi gửi: {exc}")
+    if total_ncc == 0:
+        st.warning("Site này chưa có NCC nào trong file dữ liệu.")
+    elif evaluated_count < total_ncc:
+        st.warning("Bạn chưa hoàn thành toàn bộ danh sách NCC nên chưa thể nộp kết quả.")
+    elif not st.session_state.all_results_buffer:
+        st.warning("Chưa có dữ liệu đánh giá để review.")
+    else:
+        review_df = pd.DataFrame(st.session_state.all_results_buffer)
+        summary_df = build_review_summary_df(st.session_state.all_results_buffer)
 
-            if st.session_state.last_api_status is not None:
-                # Khu debug phản hồi lần gửi gần nhất
-                st.write(f"Status code lần gửi gần nhất: {st.session_state.last_api_status}")
-                st.code(st.session_state.last_api_response or "(response rỗng)")
+        with st.container(border=True):
+            info_col1, info_col2, info_col3 = st.columns(3)
+            info_col1.metric("Site", selected_site)
+            info_col2.metric("Bộ phận", st.session_state.selected_dept)
+            info_col3.metric("Số NCC đã hoàn tất", f"{evaluated_count}/{total_ncc}")
+            st.write(f"**Người đánh giá:** {st.session_state.evaluator_name}")
+            st.write(f"**Số dòng dữ liệu chuẩn bị gửi:** {len(review_df)}")
+
+        st.markdown("### Tổng hợp theo NCC")
+        st.dataframe(summary_df, use_container_width=True, hide_index=True)
+
+        with st.expander("Xem toàn bộ dữ liệu chi tiết", expanded=True):
+            st.dataframe(review_df, use_container_width=True, hide_index=True)
+
+        st.warning("Sau khi xác nhận nộp, dữ liệu sẽ được gửi lên hệ thống. Nếu cần sửa, hãy quay lại trang đánh giá.")
+        st.checkbox(
+            "Tôi đã review xong và muốn nộp toàn bộ kết quả vào hệ thống.",
+            key="confirm_submit_results",
+        )
+
+        if st.button(
+            "🚀 XÁC NHẬN NỘP KẾT QUẢ",
+            type="primary",
+            use_container_width=True,
+            disabled=not st.session_state.confirm_submit_results,
+        ):
+            with st.spinner("Đang truyền dữ liệu bảo mật..."):
+                try:
+                    # Gửi dữ liệu sang Google Apps Script
+                    response, _ = send_results_to_google_sheet(st.session_state.all_results_buffer)
+
+                    # Ghi lại phản hồi để tiện kiểm tra khi có lỗi
+                    st.session_state.last_api_status = response.status_code
+                    st.session_state.last_api_response = response.text
+
+                    if response.status_code == 200:
+                        st.balloons()
+                        st.success("✅ Dữ liệu đã được gửi thành công tới Web App.")
+                        reset_evaluation_flow()
+                        st.session_state.current_page = "welcome"
+                        time.sleep(2)
+                        st.rerun()
+                    else:
+                        # Google phản hồi lỗi thì hiển thị chi tiết để debug
+                        st.error(f"Lỗi máy chủ Google. Status code: {response.status_code}")
+                        st.code(response.text or "(response rỗng)")
+                        st.caption("Nếu thấy lỗi 302/401/403, thường là Web App chưa deploy public đúng cách.")
+
+                except requests.exceptions.RequestException as exc:
+                    # Lỗi kết nối như timeout, DNS, mạng...
+                    st.error(f"Lỗi khi gửi request tới Google Apps Script: {exc}")
+                except Exception as exc:
+                    # Lỗi xử lý dữ liệu phía Python trước khi gửi
+                    st.error(f"Lỗi xử lý dữ liệu trước khi gửi: {exc}")
+
+        if st.session_state.last_api_status is not None and st.session_state.last_api_status != 200:
+            # Khu debug phản hồi lần gửi gần nhất
+            st.write(f"Status code lần gửi gần nhất: {st.session_state.last_api_status}")
+            st.code(st.session_state.last_api_response or "(response rỗng)")
