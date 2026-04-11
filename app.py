@@ -146,14 +146,21 @@ if st.session_state.current_page == "login":
 # TRANG 2: LỜI CHÀO MỪNG (ĐỊNH DẠNG GIỮA, KHÔNG CUỘN)
 # =====================================================================
 elif st.session_state.current_page == "welcome":
-    # 1. CSS DÀNH RIÊNG CHO TRANG WELCOME ĐỂ CĂN GIỮA & KHÓA CUỘN
+   # 1. CSS DÀNH RIÊNG CHO TRANG WELCOME
     st.markdown("""
         <style>
+        /* Ẩn Header và Toolbar của Streamlit */
+        header {visibility: hidden;}
+        [data-testid="stHeader"] {display: none;}
+        footer {visibility: hidden;}
+        #MainMenu {visibility: hidden;}
+
         /* Khóa thanh cuộn */
         [data-testid="stAppViewContainer"] {
             overflow: hidden !important;
         }
-        /* Căn giữa tuyệt đối nội dung */
+
+        /* Loại bỏ khoảng trắng thừa ở đầu trang để căn giữa chuẩn hơn */
         [data-testid="stMainBlockContainer"] {
             display: flex;
             flex-direction: column;
@@ -161,10 +168,20 @@ elif st.session_state.current_page == "welcome":
             height: 100vh;
             padding-top: 0rem !important;
             padding-bottom: 0rem !important;
+            max-width: 100% !important;
         }
-        /* Căn giữa text bên trong container */
+
+        /* Căn giữa text và hiệu ứng cho nội dung */
         .header-container, .welcome-text {
             text-align: center;
+            width: 100%;
+        }
+        
+        /* Chỉnh lại độ rộng logo nếu cần để không bị cuộn trang */
+        img {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
         </style>
     """, unsafe_allow_html=True)
