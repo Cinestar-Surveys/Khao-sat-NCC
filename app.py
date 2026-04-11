@@ -393,8 +393,13 @@ if st.session_state.current_page == "login":
         unsafe_allow_html=True,
     )
 
-    df_sites_login, _, _ = load_input_files()
+    df_sites_login, df_depts_login, _ = load_input_files()
     site_options = ["-- Chọn Site --"] + (df_sites_login["Site"].dropna().unique().tolist() if not df_sites_login.empty else [])
+    dept_options_login = ["-- Chọn Bộ phận --"] + (
+        df_depts_login[df_depts_login.columns[0]].dropna().unique().tolist() if not df_depts_login.empty else []
+    )
+    if st.session_state.selected_dept not in dept_options_login:
+        st.session_state.selected_dept = "-- Chọn Bộ phận --"
 
     col_img1, col_img2, col_img3 = st.columns([1, 1.5, 1])
     with col_img2:
@@ -410,10 +415,13 @@ if st.session_state.current_page == "login":
         with st.container(border=True):
             # Chọn site ngay từ bước đầu để hệ thống biết người dùng thuộc site nào.
             login_site = st.selectbox("🏢 Chọn Site", site_options)
+            login_dept = st.selectbox("📁 Chọn Bộ phận", dept_options_login, key="selected_dept")
             pwd = st.text_input("🔑 Mật khẩu truy cập", type="password")
             if st.button("ĐĂNG NHẬP"):
                 if login_site == "-- Chọn Site --":
                     st.error("Vui lòng chọn Site trước khi đăng nhập.")
+                elif login_dept == "-- Chọn Bộ phận --":
+                    st.error("Vui lòng chọn Bộ phận trước khi đăng nhập.")
                 elif pwd == build_site_password(login_site):
                     st.session_state.selected_site = login_site
                     st.session_state.current_page = "welcome"
@@ -634,6 +642,10 @@ elif st.session_state.current_page == "welcome":
                         <strong>Phạm vi khảo sát</strong>
                         Chỉ hiển thị đúng danh sách nhà cung cấp thuộc site đang đăng nhập.
                     </div>
+                    <div class="welcome-chip">
+                        <strong>Bộ phận đánh giá</strong>
+                        {st.session_state.selected_dept or "--"}
+                    </div>
                     <div class="welcome-chip" style="margin-bottom: 0;">
                         <strong>Mục tiêu</strong>
                         Đánh giá định kỳ để cải thiện chất lượng dịch vụ, tiến độ và mức độ phối hợp.
@@ -689,21 +701,17 @@ elif st.session_state.current_page == "evaluation":
     if not WEB_APP_URL:
         st.warning("Chưa cấu hình WEB_APP_URL trong Streamlit secrets nên chưa thể gửi dữ liệu lên Google Sheet.")
 
-    df_sites, df_depts, df_questions = load_input_files()
+    df_sites, _, df_questions = load_input_files()
 
     with st.container(border=True):
         # Khối nhập thông tin chung của người đánh giá
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         evaluator_name = col1.text_input("👤 Họ tên nhân viên đánh giá", key="evaluator_name")
-        st.info(f"🏢 Site đăng nhập: {st.session_state.selected_site}")
-        dept_options = ["-- Chọn Bộ phận --"] + (
-            df_depts[df_depts.columns[0]].dropna().unique().tolist() if not df_depts.empty else []
-        )
-        if st.session_state.selected_dept not in dept_options:
-            st.session_state.selected_dept = "-- Chọn Bộ phận --"
-        selected_dept = col2.selectbox("📁 Chọn bộ phận chuyên môn", dept_options, key="selected_dept")
+        col2.info(f"🏢 Site đăng nhập: {st.session_state.selected_site}")
+        col3.info(f"📁 Bộ phận đánh giá: {st.session_state.selected_dept}")
 
     selected_site = st.session_state.selected_site
+    selected_dept = st.session_state.selected_dept
 
     if selected_site and selected_dept != "-- Chọn Bộ phận --" and evaluator_name.strip():
         # Lấy danh sách NCC của site đang chọn
@@ -764,7 +772,8 @@ elif st.session_state.current_page == "evaluation":
                 # Lọc câu hỏi đúng với bộ phận mà người dùng đã chọn
                 st.markdown(f"<h4 style='color: #6f42c1;'>Đang đánh giá: {current_ncc}</h4>", unsafe_allow_html=True)
                 df_q_filtered = df_questions[
-                    df_questions["Câu hỏi dành cho bộ phận"].astype(str).str.contains(selected_dept, na=False, case=False)
+                    df_questions["Câu hỏi dành cho bộ phận"].astype(str).str.strip().str.casefold()
+                    == selected_dept.strip().casefold()
                 ]
                 saved_answers_map = get_saved_answers_map(selected_site, selected_dept, current_ncc)
                 current_answers = []
@@ -854,13 +863,12 @@ elif st.session_state.current_page == "evaluation":
                         # Nếu NCC này đã từng lưu thì dữ liệu mới sẽ ghi đè dữ liệu cũ.
                         replace_ncc_results(current_ncc, current_answers)
                         st.session_state.current_ncc_selector = get_next_pending_ncc(list_ncc)
-                        st.session_state.current_ncc_widget = st.session_state.current_ncc_selector
                         st.session_state.scroll_to_top = True
                         st.rerun()
         else:
             st.warning("Site này chưa có NCC nào trong file dữ liệu.")
     else:
-        st.info("Điền họ tên và chọn bộ phận để hệ thống hiển thị form đánh giá NCC.")
+        st.info("Điền họ tên nhân viên để hệ thống hiển thị form đánh giá theo đúng bộ phận đã đăng nhập.")
 
 
 elif st.session_state.current_page == "review_submit":
