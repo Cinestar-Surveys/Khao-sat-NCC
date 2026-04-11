@@ -145,6 +145,8 @@ if "selected_site" not in st.session_state:
     st.session_state.selected_site = ""
 if "selected_dept" not in st.session_state:
     st.session_state.selected_dept = "-- Chọn Bộ phận --"
+if "login_dept_widget" not in st.session_state:
+    st.session_state.login_dept_widget = "-- Chọn Bộ phận --"
 if "evaluator_name" not in st.session_state:
     st.session_state.evaluator_name = ""
 if "current_ncc_selector" not in st.session_state:
@@ -398,8 +400,10 @@ if st.session_state.current_page == "login":
     dept_options_login = ["-- Chọn Bộ phận --"] + (
         df_depts_login[df_depts_login.columns[0]].dropna().unique().tolist() if not df_depts_login.empty else []
     )
-    if st.session_state.selected_dept not in dept_options_login:
-        st.session_state.selected_dept = "-- Chọn Bộ phận --"
+    if st.session_state.login_dept_widget not in dept_options_login:
+        st.session_state.login_dept_widget = st.session_state.selected_dept
+    if st.session_state.login_dept_widget not in dept_options_login:
+        st.session_state.login_dept_widget = "-- Chọn Bộ phận --"
 
     col_img1, col_img2, col_img3 = st.columns([1, 1.5, 1])
     with col_img2:
@@ -415,7 +419,7 @@ if st.session_state.current_page == "login":
         with st.container(border=True):
             # Chọn site ngay từ bước đầu để hệ thống biết người dùng thuộc site nào.
             login_site = st.selectbox("🏢 Chọn Site", site_options)
-            login_dept = st.selectbox("📁 Chọn Bộ phận", dept_options_login, key="selected_dept")
+            login_dept = st.selectbox("📁 Chọn Bộ phận", dept_options_login, key="login_dept_widget")
             pwd = st.text_input("🔑 Mật khẩu truy cập", type="password")
             if st.button("ĐĂNG NHẬP"):
                 if login_site == "-- Chọn Site --":
