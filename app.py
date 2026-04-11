@@ -47,11 +47,11 @@ def read_config_value(key, default=""):
 # --- CẤU HÌNH THÔNG TIN CÔNG TY & BẢO MẬT
 # Ưu tiên lấy từ st.secrets, sau đó tới biến môi trường.
 # - WEB_APP_URL: URL của Google Apps Script
-# - COMPANY_PASSWORD: mật khẩu đăng nhập hệ thống
+# - SITE_PASSWORD_SUFFIX: hậu tố mật khẩu theo site, ví dụ "Cinestar"
 # - LOGO_URL: file logo dùng để hiển thị
 # =====================================================================
 WEB_APP_URL = read_config_value("WEB_APP_URL", "")
-COMPANY_PASSWORD = read_config_value("COMPANY_PASSWORD", "")
+SITE_PASSWORD_SUFFIX = read_config_value("SITE_PASSWORD_SUFFIX", "Cinestar")
 LOGO_URL = read_config_value("LOGO_URL", "logo.png")
 
 
@@ -119,6 +119,8 @@ st.markdown(
 # =========================================================
 if "current_page" not in st.session_state:
     st.session_state.current_page = "login"
+if "selected_site" not in st.session_state:
+    st.session_state.selected_site = ""
 if "evaluated_nccs" not in st.session_state:
     st.session_state.evaluated_nccs = []
 if "all_results_buffer" not in st.session_state:
@@ -195,9 +197,16 @@ def send_results_to_google_sheet(rows):
     return response, payload
 
 
+def build_site_password(site_name):
+    # Mật khẩu đăng nhập theo quy tắc:
+    # Ten Site + "_" + hậu tố cấu hình
+    # Ví dụ: "Site A_Cinestar"
+    return f"{site_name}_{SITE_PASSWORD_SUFFIX}"
+
+
 # =====================================================================
 # TRANG 1: MÀN HÌNH ĐĂNG NHẬP
-# - nhập mật khẩu
+# - chọn site và nhập mật khẩu theo site
 # - kiểm tra quyền truy cập
 # - chuyển sang trang welcome khi đăng nhập đúng
 # =====================================================================
@@ -220,6 +229,9 @@ if st.session_state.current_page == "login":
         unsafe_allow_html=True,
     )
 
+    df_sites_login, _, _ = load_input_files()
+    site_options = ["-- Chọn Site --"] + (df_sites_login["Site"].dropna().unique().tolist() if not df_sites_login.empty else [])
+
     col_img1, col_img2, col_img3 = st.columns([1, 1.5, 1])
     with col_img2:
         try:
@@ -232,18 +244,19 @@ if st.session_state.current_page == "login":
     col_l, col_m, col_r = st.columns([1, 1, 1])
     with col_m:
         with st.container(border=True):
-            # Nếu thiếu mật khẩu trong secrets thì báo để biết app chưa cấu hình xong.
-            if not COMPANY_PASSWORD:
-                st.error("Chưa cấu hình COMPANY_PASSWORD trong Streamlit secrets.")
+            # Chọn site ngay từ bước đầu để hệ thống biết người dùng thuộc site nào.
+            login_site = st.selectbox("🏢 Chọn Site", site_options)
+            st.caption('Mật khẩu đăng nhập theo mẫu: "Tên Site_Cinestar"')
             pwd = st.text_input("🔑 Mật khẩu truy cập", type="password")
             if st.button("ĐĂNG NHẬP"):
-                if not COMPANY_PASSWORD:
-                    st.stop()
-                if pwd == COMPANY_PASSWORD:
+                if login_site == "-- Chọn Site --":
+                    st.error("Vui lòng chọn Site trước khi đăng nhập.")
+                elif pwd == build_site_password(login_site):
+                    st.session_state.selected_site = login_site
                     st.session_state.current_page = "welcome"
                     st.rerun()
                 else:
-                    st.error("Sai mật khẩu! Vui lòng thử lại.")
+                    st.error(f'Sai mật khẩu. Mật khẩu đúng phải theo mẫu: "{login_site}_{SITE_PASSWORD_SUFFIX}"')
 
 
 # =====================================================================
@@ -329,6 +342,11 @@ elif st.session_state.current_page == "evaluation":
     st.markdown("<h2>📋 BẢNG ĐÁNH GIÁ CHI TIẾT</h2>", unsafe_allow_html=True)
     st.caption("Vui lòng điền thông tin và hoàn thành toàn bộ danh sách nhà cung cấp của Site.")
 
+    if not st.session_state.selected_site:
+        st.warning("Chưa có Site đăng nhập. Vui lòng quay lại màn hình đăng nhập.")
+        st.session_state.current_page = "login"
+        st.rerun()
+
     # Nếu chưa có WEB_APP_URL thì vẫn có thể thao tác,
     # nhưng chưa thể gửi dữ liệu lên Google Sheet.
     if not WEB_APP_URL:
@@ -338,18 +356,17 @@ elif st.session_state.current_page == "evaluation":
 
     with st.container(border=True):
         # Khối nhập thông tin chung của người đánh giá
-        col1, col2, col3 = st.columns(3)
+        col1, col2 = st.columns(2)
         evaluator_name = col1.text_input("👤 Họ tên nhân viên đánh giá")
-        selected_site = col2.selectbox(
-            "🏢 Chọn Site công tác",
-            ["-- Chọn Site --"] + (df_sites["Site"].dropna().unique().tolist() if not df_sites.empty else []),
-        )
-        selected_dept = col3.selectbox(
+        st.info(f"🏢 Site đăng nhập: {st.session_state.selected_site}")
+        selected_dept = col2.selectbox(
             "📁 Chọn bộ phận chuyên môn",
             ["-- Chọn Bộ phận --"] + (df_depts[df_depts.columns[0]].dropna().unique().tolist() if not df_depts.empty else []),
         )
 
-    if selected_site != "-- Chọn Site --" and selected_dept != "-- Chọn Bộ phận --" and evaluator_name:
+    selected_site = st.session_state.selected_site
+
+    if selected_site and selected_dept != "-- Chọn Bộ phận --" and evaluator_name:
         # Lấy danh sách NCC của site đang chọn
         list_ncc = df_sites[df_sites["Site"] == selected_site]["NCC"].dropna().tolist()
         total_ncc = len(list_ncc)
