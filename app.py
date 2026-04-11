@@ -143,8 +143,6 @@ if "current_page" not in st.session_state:
     st.session_state.current_page = "login"
 if "selected_site" not in st.session_state:
     st.session_state.selected_site = ""
-if "login_notice" not in st.session_state:
-    st.session_state.login_notice = ""
 if "selected_dept" not in st.session_state:
     st.session_state.selected_dept = "-- Chọn Bộ phận --"
 if "evaluator_name" not in st.session_state:
@@ -411,10 +409,6 @@ if st.session_state.current_page == "login":
             pass
         st.markdown("<h2 style='text-align: center;'>HỆ THỐNG ĐÁNH GIÁ NỘI BỘ</h2>", unsafe_allow_html=True)
 
-    if st.session_state.login_notice:
-        st.warning(st.session_state.login_notice)
-        st.session_state.login_notice = ""
-
     st.write("<br>", unsafe_allow_html=True)
     col_l, col_m, col_r = st.columns([1, 1, 1])
     with col_m:
@@ -430,6 +424,7 @@ if st.session_state.current_page == "login":
                     st.error("Vui lòng chọn Bộ phận trước khi đăng nhập.")
                 elif pwd == build_site_password(login_site):
                     st.session_state.selected_site = login_site
+                    st.session_state.selected_dept = login_dept
                     st.session_state.current_page = "welcome"
                     st.rerun()
                 else:
@@ -442,33 +437,41 @@ if st.session_state.current_page == "login":
 # - có nút để chuyển sang trang đánh giá
 # =====================================================================
 elif st.session_state.current_page == "welcome":
-    if st.session_state.selected_dept == "-- Chọn Bộ phận --":
-        st.session_state.login_notice = "Vui lòng chọn Bộ phận ở màn hình đăng nhập để tiếp tục đánh giá."
-        st.session_state.current_page = "login"
-        st.rerun()
-
     st.markdown(
         """
         <style>
+        html, body, [data-testid="stApp"] {
+            height: 100vh;
+            overflow: hidden !important;
+        }
         [data-testid="stAppViewContainer"] {
+            height: 100vh;
             overflow: hidden !important;
         }
         [data-testid="stMainBlockContainer"] {
+            height: 100vh;
             min-height: 100vh;
-            padding-top: 1rem !important;
-            padding-bottom: 1rem !important;
+            box-sizing: border-box;
+            padding-top: 0.8rem !important;
+            padding-bottom: 0.8rem !important;
             display: flex;
             align-items: center;
+            justify-content: center;
+            overflow: hidden !important;
         }
         .welcome-stage {
             max-width: 1120px;
             margin: 0 auto;
             width: 100%;
+            max-height: calc(100vh - 1.6rem);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         .welcome-card {
             position: relative;
             overflow: hidden;
-            padding: 2.15rem 2.45rem;
+            padding: 1.85rem 2.25rem;
             border-radius: 28px;
             border: 1px solid rgba(111, 66, 193, 0.16);
             background:
@@ -577,7 +580,7 @@ elif st.session_state.current_page == "welcome":
         }
         .welcome-actions {
             max-width: 520px;
-            margin: 0.85rem auto 0 auto;
+            margin: 0.65rem auto 0 auto;
             text-align: center;
         }
         .welcome-actions p {
@@ -685,11 +688,6 @@ elif st.session_state.current_page == "welcome":
 # - gửi toàn bộ dữ liệu lên Google Sheet khi hoàn tất
 # =====================================================================
 elif st.session_state.current_page == "evaluation":
-    if st.session_state.selected_dept == "-- Chọn Bộ phận --":
-        st.session_state.login_notice = "Phiên đăng nhập này chưa có Bộ phận hợp lệ. Vui lòng đăng nhập lại và chọn Bộ phận."
-        st.session_state.current_page = "login"
-        st.rerun()
-
     try:
         st.sidebar.image(LOGO_URL, use_container_width=True)
     except Exception:
@@ -888,11 +886,6 @@ elif st.session_state.current_page == "evaluation":
 
 
 elif st.session_state.current_page == "review_submit":
-    if st.session_state.selected_dept == "-- Chọn Bộ phận --":
-        st.session_state.login_notice = "Phiên đăng nhập này chưa có Bộ phận hợp lệ. Vui lòng đăng nhập lại và chọn Bộ phận."
-        st.session_state.current_page = "login"
-        st.rerun()
-
     try:
         st.sidebar.image(LOGO_URL, use_container_width=True)
     except Exception:
