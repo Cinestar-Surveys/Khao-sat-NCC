@@ -740,15 +740,18 @@ elif st.session_state.current_page == "evaluation":
                                         score_series = options_df.loc[
                                             options_df["Lựa chọn"].astype(str) == str(user_choice), "Điểm"
                                         ]
+                                        if score_series.empty:
+                                            unanswered_questions.append(f"{group_name} - {criterion}")
+                                            continue
                                         score_raw = score_series.iloc[0]
                                         # Ép về float để tránh lỗi JSON khi gửi dữ liệu
                                         score = float(score_raw)
 
                                         # Mỗi câu trả lời tạo thành một dòng dữ liệu sẽ gửi đi sau cùng
-                                    current_answers.append(
-                                        {
-                                            "Thời gian": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                            "Họ tên NV đánh giá": evaluator_name,
+                                        current_answers.append(
+                                            {
+                                                "Thời gian": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                "Họ tên NV đánh giá": evaluator_name,
                                                 "Bộ phận": selected_dept,
                                                 "Site": selected_site,
                                                 "Tên NCC": current_ncc,
