@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import re
 import time
 
 import pandas as pd
@@ -198,29 +199,47 @@ def normalize_department_label(value):
     return " ".join(str(value).replace("\n", " ").split()).strip()
 
 
-def get_department_options(df_depts, df_qs):
-    # Ưu tiên lấy danh sách bộ phận trực tiếp từ file câu hỏi
-    # để dropdown và điều kiện lọc luôn dùng cùng một nguồn dữ liệu.
-    question_dept_options = []
-    if not df_qs.empty and "Câu hỏi dành cho bộ phận" in df_qs.columns:
-        question_dept_options = [
-            normalize_department_label(value)
-            for value in df_qs["Câu hỏi dành cho bộ phận"].dropna().tolist()
-            if normalize_department_label(value)
+def get_department_options(df_depts):
+    # Dropdown bộ phận phải lấy từ file danh sách bộ phận đánh giá.
+    if df_depts.empty:
+        return ["-- Chọn Bộ phận --"]
+
+    dept_options = [
+        normalize_department_label(value)
+        for value in df_depts.iloc[:, 0].dropna().tolist()
+        if normalize_department_label(value)
+    ]
+    return ["-- Chọn Bộ phận --"] + list(dict.fromkeys(dept_options))
+
+
+def parse_departments_from_question_cell(value):
+    # Trong file câu hỏi, một ô có thể chứa nhiều bộ phận,
+    # mỗi bộ phận nằm trong dấu "" và cách nhau bằng dấu phẩy.
+    cell_text = str(value or "").replace("\n", " ").strip()
+    if not cell_text:
+        return []
+
+    quoted_departments = re.findall(r'"([^"]+)"', cell_text)
+    if quoted_departments:
+        return [
+            normalize_department_label(item)
+            for item in quoted_departments
+            if normalize_department_label(item)
         ]
 
-    if question_dept_options:
-        return ["-- Chọn Bộ phận --"] + list(dict.fromkeys(question_dept_options))
+    # Fallback cho các dòng không có dấu " nhưng vẫn chứa dữ liệu cũ.
+    return [
+        normalize_department_label(item)
+        for item in cell_text.split(",")
+        if normalize_department_label(item)
+    ]
 
-    if not df_depts.empty:
-        dept_options = [
-            normalize_department_label(value)
-            for value in df_depts.iloc[:, 0].dropna().tolist()
-            if normalize_department_label(value)
-        ]
-        return ["-- Chọn Bộ phận --"] + list(dict.fromkeys(dept_options))
 
-    return ["-- Chọn Bộ phận --"]
+def question_matches_department(question_dept_value, selected_dept):
+    # So khớp tuyệt đối theo từng bộ phận được khai báo trong ô câu hỏi.
+    normalized_selected_dept = normalize_department_label(selected_dept).casefold()
+    parsed_departments = parse_departments_from_question_cell(question_dept_value)
+    return any(dept.casefold() == normalized_selected_dept for dept in parsed_departments)
 
 
 def to_json_safe_value(value):
@@ -426,9 +445,9 @@ if st.session_state.current_page == "login":
         unsafe_allow_html=True,
     )
 
-    df_sites_login, df_depts_login, df_questions_login = load_input_files()
+    df_sites_login, df_depts_login, _ = load_input_files()
     site_options = ["-- Chọn Site --"] + (df_sites_login["Site"].dropna().unique().tolist() if not df_sites_login.empty else [])
-    dept_options_login = get_department_options(df_depts_login, df_questions_login)
+    dept_options_login = get_department_options(df_depts_login)
     if st.session_state.login_dept_widget not in dept_options_login:
         st.session_state.login_dept_widget = st.session_state.selected_dept
     if st.session_state.login_dept_widget not in dept_options_login:
@@ -818,10 +837,10 @@ elif st.session_state.current_page == "evaluation":
             with st.form(key=f"form_{current_ncc}"):
                 # Lọc câu hỏi đúng với bộ phận mà người dùng đã chọn
                 st.markdown(f"<h4 style='color: #6f42c1;'>Đang đánh giá: {current_ncc}</h4>", unsafe_allow_html=True)
-                question_dept_series = df_questions["Câu hỏi dành cho bộ phận"].map(normalize_department_label).str.casefold()
-                normalized_selected_dept = normalize_department_label(selected_dept).casefold()
                 df_q_filtered = df_questions[
-                    question_dept_series == normalized_selected_dept
+                    df_questions["Câu hỏi dành cho bộ phận"].map(
+                        lambda value: question_matches_department(value, selected_dept)
+                    )
                 ]
                 saved_answers_map = get_saved_answers_map(selected_site, selected_dept, current_ncc)
                 current_answers = []
