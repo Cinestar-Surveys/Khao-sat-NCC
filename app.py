@@ -146,169 +146,62 @@ if st.session_state.current_page == "login":
 # TRANG 2: LỜI CHÀO MỪNG (ĐỊNH DẠNG GIỮA, KHÔNG CUỘN)
 # =====================================================================
 elif st.session_state.current_page == "welcome":
-
+    # 1. CSS DÀNH RIÊNG CHO TRANG WELCOME ĐỂ CĂN GIỮA & KHÓA CUỘN
     st.markdown("""
-    <style>
-
-    /* ===== RESET ===== */
-    .block-container {
-        padding: 0 !important;
-        max-width: 100% !important;
-    }
-
-    header, footer {
-        visibility: hidden;
-    }
-
-    html, body {
-        overflow: hidden;
-    }
-
-    /* ===== FULL SCREEN ===== */
-    .hero {
-        height: 100vh;
-        width: 100vw;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: radial-gradient(circle at 20% 30%, #8e5cf6 0%, transparent 40%),
-                    radial-gradient(circle at 80% 70%, #6f42c1 0%, transparent 40%),
-                    #0f1117;
-        color: white;
-    }
-
-    /* ===== CONTAINER ===== */
-    .hero-container {
-        width: 1100px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 60px;
-    }
-
-    /* ===== LEFT SIDE ===== */
-    .hero-left {
-        flex: 1;
-    }
-
-    .logo {
-        margin-bottom: 20px;
-    }
-
-    .title {
-        font-size: 42px;
-        font-weight: 800;
-        line-height: 1.2;
-        margin-bottom: 10px;
-    }
-
-    .subtitle {
-        font-size: 20px;
-        color: #b39cff;
-        font-weight: 600;
-        margin-bottom: 25px;
-    }
-
-    .desc {
-        font-size: 16px;
-        color: #ccc;
-        line-height: 1.7;
-        margin-bottom: 30px;
-        max-width: 500px;
-    }
-
-    .highlight {
-        font-weight: 600;
-        color: white;
-        margin-bottom: 10px;
-    }
-
-    /* ===== BUTTON ===== */
-    div.stButton {
-        margin-top: 10px;
-    }
-
-    div.stButton > button {
-        background: linear-gradient(135deg, #8e5cf6, #6f42c1);
-        color: white;
-        border: none;
-        padding: 14px 30px;
-        font-size: 16px;
-        font-weight: 600;
-        border-radius: 10px;
-        box-shadow: 0 8px 25px rgba(111,66,193,0.4);
-        transition: all 0.25s ease;
-    }
-
-    div.stButton > button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 30px rgba(111,66,193,0.6);
-    }
-
-    /* ===== RIGHT SIDE (VISUAL) ===== */
-    .hero-right {
-        flex: 1;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .glass-box {
-        width: 400px;
-        height: 300px;
-        border-radius: 20px;
-        background: rgba(255,255,255,0.05);
-        backdrop-filter: blur(20px);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 18px;
-        color: #aaa;
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-
-    </style>
+        <style>
+        /* Khóa thanh cuộn */
+        [data-testid="stAppViewContainer"] {
+            overflow: hidden !important;
+        }
+        /* Căn giữa tuyệt đối nội dung */
+        [data-testid="stMainBlockContainer"] {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100vh;
+            padding-top: 0rem !important;
+            padding-bottom: 0rem !important;
+        }
+        /* Căn giữa text bên trong container */
+        .header-container, .welcome-text {
+            text-align: center;
+        }
+        </style>
     """, unsafe_allow_html=True)
 
-    # ===== HERO START =====
-    st.markdown('<div class="hero">', unsafe_allow_html=True)
-    st.markdown('<div class="hero-container">', unsafe_allow_html=True)
-
-    # ===== LEFT =====
-    st.markdown('<div class="hero-left">', unsafe_allow_html=True)
-
+    # 2. NỘI DUNG HIỂN THỊ
+    st.markdown('<div class="header-container">', unsafe_allow_html=True)
     try:
-        st.markdown('<div class="logo">', unsafe_allow_html=True)
-        st.image(LOGO_URL, width=160)
-        st.markdown('</div>', unsafe_allow_html=True)
+        # Giảm size logo một chút để đảm bảo vừa khít màn hình không bị kích hoạt cuộn
+        st.image(LOGO_URL, width=220)
     except:
         pass
-
-    st.markdown('<div class="title">Khảo sát đánh giá<br>Nhà cung cấp</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">CINESTAR CINEMAS VIETNAM</div>', unsafe_allow_html=True)
-
-    st.markdown('<div class="highlight">Hãy để người trải nghiệm trực tiếp lên tiếng!</div>', unsafe_allow_html=True)
-
+    
+    st.markdown("<h1 style='margin-bottom: 0;'>Khảo sát đánh giá Nhà cung cấp</h1>", unsafe_allow_html=True)
+    st.markdown("<h2 style='margin-top: 0; color: #6f42c1;'>CINESTAR CINEMAS VIETNAM</h2>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     st.markdown("""
-    <div class="desc">
-    Ý kiến của bạn giúp chúng tôi đánh giá đúng năng lực đối tác,
-    cải thiện chất lượng dịch vụ và tối ưu vận hành toàn hệ thống.
-    </div>
+        <div class="welcome-text">
+            <p style="font-size: 1.2rem; margin-bottom: 20px;">
+                <b>Hãy để người trải nghiệm trực tiếp lên tiếng!</b>
+            </p>
+            Chào mừng bạn đến với hệ thống đánh giá chất lượng nhà cung cấp định kỳ.<br>
+            Mọi ý kiến của bạn chính là thước đo giúp công ty nhìn nhận đúng năng lực đối tác,<br>
+            từ đó nâng cao chất lượng dịch vụ và tối ưu hóa quy trình vận hành.<br><br>
+            <i style="color: #666;">Hãy dành ít phút để hoàn thành khảo sát này một cách tâm huyết nhất nhé!</i>
+        </div>
     """, unsafe_allow_html=True)
+    
+    st.write("<br>", unsafe_allow_html=True)
+    
+    # 3. NÚT BẤM CĂN GIỮA
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("🚀 BẮT ĐẦU ĐÁNH GIÁ NGAY", use_container_width=True):
+            st.session_state.current_page = "evaluation"
+            st.rerun()
 
-    if st.button("🚀 Bắt đầu đánh giá"):
-        st.session_state.current_page = "evaluation"
-        st.rerun()
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # ===== RIGHT =====
-    st.markdown('<div class="hero-right">', unsafe_allow_html=True)
-    st.markdown('<div class="glass-box">CINESTAR SURVEY</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
 # =====================================================================
 # TRANG 3: KHU VỰC THỰC HIỆN ĐÁNH GIÁ (MAIN APP)
 # =====================================================================
