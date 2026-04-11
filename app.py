@@ -193,6 +193,36 @@ def load_input_files():
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
 
+def normalize_department_label(value):
+    # Chuẩn hóa tên bộ phận để so khớp ổn định giữa các file Excel.
+    return " ".join(str(value).replace("\n", " ").split()).strip()
+
+
+def get_department_options(df_depts, df_qs):
+    # Ưu tiên lấy danh sách bộ phận trực tiếp từ file câu hỏi
+    # để dropdown và điều kiện lọc luôn dùng cùng một nguồn dữ liệu.
+    question_dept_options = []
+    if not df_qs.empty and "Câu hỏi dành cho bộ phận" in df_qs.columns:
+        question_dept_options = [
+            normalize_department_label(value)
+            for value in df_qs["Câu hỏi dành cho bộ phận"].dropna().tolist()
+            if normalize_department_label(value)
+        ]
+
+    if question_dept_options:
+        return ["-- Chọn Bộ phận --"] + list(dict.fromkeys(question_dept_options))
+
+    if not df_depts.empty:
+        dept_options = [
+            normalize_department_label(value)
+            for value in df_depts.iloc[:, 0].dropna().tolist()
+            if normalize_department_label(value)
+        ]
+        return ["-- Chọn Bộ phận --"] + list(dict.fromkeys(dept_options))
+
+    return ["-- Chọn Bộ phận --"]
+
+
 def to_json_safe_value(value):
     # Chuẩn hóa dữ liệu trước khi chuyển thành JSON
     # để tránh lỗi kiểu pandas / numpy khi gửi request.
@@ -299,6 +329,7 @@ def reset_evaluation_flow():
     st.session_state.last_api_status = None
     st.session_state.last_api_response = None
     st.session_state.selected_dept = "-- Chọn Bộ phận --"
+    st.session_state.login_dept_widget = "-- Chọn Bộ phận --"
     st.session_state.evaluator_name = ""
     st.session_state.scroll_to_top = False
     clear_question_widget_states()
@@ -395,11 +426,9 @@ if st.session_state.current_page == "login":
         unsafe_allow_html=True,
     )
 
-    df_sites_login, df_depts_login, _ = load_input_files()
+    df_sites_login, df_depts_login, df_questions_login = load_input_files()
     site_options = ["-- Chọn Site --"] + (df_sites_login["Site"].dropna().unique().tolist() if not df_sites_login.empty else [])
-    dept_options_login = ["-- Chọn Bộ phận --"] + (
-        df_depts_login[df_depts_login.columns[0]].dropna().unique().tolist() if not df_depts_login.empty else []
-    )
+    dept_options_login = get_department_options(df_depts_login, df_questions_login)
     if st.session_state.login_dept_widget not in dept_options_login:
         st.session_state.login_dept_widget = st.session_state.selected_dept
     if st.session_state.login_dept_widget not in dept_options_login:
@@ -428,7 +457,7 @@ if st.session_state.current_page == "login":
                     st.error("Vui lòng chọn Bộ phận trước khi đăng nhập.")
                 elif pwd == build_site_password(login_site):
                     st.session_state.selected_site = login_site
-                    st.session_state.selected_dept = login_dept
+                    st.session_state.selected_dept = normalize_department_label(login_dept)
                     st.session_state.current_page = "welcome"
                     st.rerun()
                 else:
@@ -789,9 +818,10 @@ elif st.session_state.current_page == "evaluation":
             with st.form(key=f"form_{current_ncc}"):
                 # Lọc câu hỏi đúng với bộ phận mà người dùng đã chọn
                 st.markdown(f"<h4 style='color: #6f42c1;'>Đang đánh giá: {current_ncc}</h4>", unsafe_allow_html=True)
+                question_dept_series = df_questions["Câu hỏi dành cho bộ phận"].map(normalize_department_label).str.casefold()
+                normalized_selected_dept = normalize_department_label(selected_dept).casefold()
                 df_q_filtered = df_questions[
-                    df_questions["Câu hỏi dành cho bộ phận"].astype(str).str.strip().str.casefold()
-                    == selected_dept.strip().casefold()
+                    question_dept_series == normalized_selected_dept
                 ]
                 saved_answers_map = get_saved_answers_map(selected_site, selected_dept, current_ncc)
                 current_answers = []
