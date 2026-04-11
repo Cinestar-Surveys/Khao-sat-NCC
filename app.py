@@ -327,27 +327,37 @@ elif st.session_state.current_page == "welcome":
         """
         <style>
         [data-testid="stAppViewContainer"] {
-            overflow: auto !important;
+            overflow: hidden !important;
         }
         [data-testid="stMainBlockContainer"] {
-            min-height: 100vh;
-            padding-top: 2.5rem !important;
-            padding-bottom: 2.5rem !important;
+            min-height: 100dvh;
+            padding-top: 1.1rem !important;
+            padding-bottom: 1.1rem !important;
+            display: flex;
+            align-items: center;
         }
         .welcome-stage {
             max-width: 1120px;
             margin: 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         .welcome-card {
             position: relative;
             overflow: hidden;
-            padding: 2.5rem 2.75rem;
+            min-height: calc(100dvh - 9.2rem);
+            padding: 1.75rem 2.2rem 1.45rem 2.2rem;
             border-radius: 28px;
             border: 1px solid rgba(111, 66, 193, 0.16);
             background:
                 radial-gradient(circle at top right, rgba(111, 66, 193, 0.10), transparent 32%),
                 linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,244,255,0.96));
             box-shadow: 0 24px 60px rgba(54, 44, 92, 0.10);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         .welcome-card::after {
             content: "";
@@ -367,61 +377,62 @@ elif st.session_state.current_page == "welcome":
             font-weight: 700;
             font-size: 0.92rem;
             letter-spacing: 0.02em;
-            margin-bottom: 1.2rem;
+            margin-bottom: 0.9rem;
         }
         .welcome-grid {
             display: grid;
             grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.9fr);
-            gap: 1.5rem;
+            gap: 1.2rem;
             align-items: center;
+            flex: 1;
         }
         .welcome-brand img {
-            max-width: 220px;
+            max-width: 200px;
         }
         .welcome-title {
-            margin: 1rem 0 0.55rem 0;
-            font-size: clamp(2.35rem, 4vw, 4rem);
+            margin: 0.7rem 0 0.45rem 0;
+            font-size: clamp(2.15rem, 3.8vw, 3.55rem);
             line-height: 1.06;
             font-weight: 800;
             color: #23283b;
             letter-spacing: -0.03em;
         }
         .welcome-subtitle {
-            margin: 0 0 1.25rem 0;
+            margin: 0 0 0.95rem 0;
             color: #6f42c1;
-            font-size: 1.2rem;
+            font-size: 1.08rem;
             font-weight: 700;
             letter-spacing: 0.03em;
             text-transform: uppercase;
         }
         .welcome-lead {
-            margin: 0 0 0.9rem 0;
-            font-size: 1.18rem;
+            margin: 0 0 0.75rem 0;
+            font-size: 1.08rem;
             font-weight: 700;
             color: #2e3347;
         }
         .welcome-copy {
             margin: 0;
-            font-size: 1.06rem;
-            line-height: 1.8;
+            font-size: 1rem;
+            line-height: 1.68;
             color: #50556b;
             max-width: 680px;
         }
         .welcome-note {
-            margin-top: 1.35rem;
-            font-size: 1.04rem;
+            margin-top: 0.9rem;
+            font-size: 0.98rem;
             font-style: italic;
             color: #6c7286;
         }
         .welcome-side {
-            padding: 1.5rem;
-            border-radius: 22px;
+            padding: 1.2rem;
+            border-radius: 20px;
             background: linear-gradient(180deg, rgba(111, 66, 193, 0.11), rgba(111, 66, 193, 0.05));
             border: 1px solid rgba(111, 66, 193, 0.14);
         }
         .welcome-side-title {
-            margin: 0 0 1rem 0;
-            font-size: 1rem;
+            margin: 0 0 0.85rem 0;
+            font-size: 0.96rem;
             font-weight: 800;
             color: #2d3042;
             text-transform: uppercase;
@@ -430,14 +441,14 @@ elif st.session_state.current_page == "welcome":
         .welcome-chip {
             display: block;
             width: 100%;
-            margin-bottom: 0.75rem;
-            padding: 0.9rem 1rem;
-            border-radius: 16px;
+            margin-bottom: 0.6rem;
+            padding: 0.82rem 0.95rem;
+            border-radius: 15px;
             background: rgba(255,255,255,0.72);
             border: 1px solid rgba(111, 66, 193, 0.08);
             color: #31364a;
-            font-size: 0.98rem;
-            line-height: 1.45;
+            font-size: 0.95rem;
+            line-height: 1.42;
         }
         .welcome-chip strong {
             display: block;
@@ -448,18 +459,32 @@ elif st.session_state.current_page == "welcome":
             letter-spacing: 0.06em;
         }
         .welcome-actions {
-            max-width: 520px;
-            margin: 2rem auto 0 auto;
+            max-width: 460px;
+            margin: 0.7rem auto 0 auto;
             text-align: center;
         }
         .welcome-actions p {
-            margin: 0 0 0.9rem 0;
+            margin: 0 0 0.55rem 0;
             color: #646b80;
-            font-size: 0.98rem;
+            font-size: 0.95rem;
         }
-        @media (max-width: 900px) {
+        .welcome-cta-slot {
+            max-width: 460px;
+            margin: 0 auto;
+        }
+        @media (max-width: 900px), (max-height: 760px) {
+            [data-testid="stAppViewContainer"] {
+                overflow: auto !important;
+            }
+            [data-testid="stMainBlockContainer"] {
+                display: block;
+                min-height: auto;
+                padding-top: 1.25rem !important;
+                padding-bottom: 1.25rem !important;
+            }
             .welcome-card {
-                padding: 1.75rem 1.25rem;
+                min-height: auto;
+                padding: 1.5rem 1.15rem;
                 border-radius: 22px;
             }
             .welcome-grid {
@@ -467,6 +492,9 @@ elif st.session_state.current_page == "welcome":
             }
             .welcome-brand img {
                 max-width: 180px;
+            }
+            .welcome-actions {
+                margin-top: 1.35rem;
             }
         }
         </style>
@@ -514,13 +542,16 @@ elif st.session_state.current_page == "welcome":
                     </div>
                 </div>
             </div>
+            <div class="welcome-actions">
+                <p>Sẵn sàng bắt đầu? Nhấn nút bên dưới để chuyển sang danh sách đánh giá của site.</p>
+                <div class="welcome-cta-slot" id="welcome-cta-slot"></div>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.markdown('<div class="welcome-actions"><p>Sẵn sàng bắt đầu? Nhấn nút bên dưới để chuyển sang danh sách đánh giá của site.</p></div>', unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1.15, 1, 1.15])
+    col1, col2, col3 = st.columns([1.35, 1, 1.35])
     with col2:
         if st.button("🚀 BẮT ĐẦU ĐÁNH GIÁ NGAY", use_container_width=True):
             st.session_state.current_page = "evaluation"
