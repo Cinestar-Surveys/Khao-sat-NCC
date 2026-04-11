@@ -17,10 +17,12 @@ primaryColor="#6f42c1"
 # =====================================================================
 # --- CẤU HÌNH THÔNG TIN CÔNG TY & BẢO MẬT ---
 # =====================================================================
-WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzavi1yoySkRWfXHbpwxCi8FwmDKdzHVQMSnB2-zmu79V4V8sa1sEVk0AIQGSC3vtHLgg/exec"
-COMPANY_PASSWORD = "Cinestar" 
-LOGO_URL = "logo.png" 
-
+try:
+    WEB_APP_URL = st.secrets["WEB_APP_URL"]
+    COMPANY_PASSWORD = st.secrets["COMPANY_PASSWORD"]
+except:
+    st.error("🚨 Lỗi: Chưa cài đặt Secrets (Mật khẩu hoặc Link Google)!")
+    st.stop()
 # --- CẤU HÌNH TRANG ---
 st.set_page_config(page_title="Đánh giá NCC Cinestar", layout="wide", page_icon="🍿")
 
