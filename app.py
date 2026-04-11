@@ -220,8 +220,9 @@ elif st.session_state.current_page == "welcome":
 
     # Nút bấm (Gom gần lại phía trên)
     st.write("<br>", unsafe_allow_html=True)
-    if st.button("🚀 BẮT ĐẦU ĐÁNH GIÁ NGAY", use_container_width=True):
-        st.session_state.current_page = "survey" # Hoặc logic chuyển trang của bạn
+  # Thêm tham số key="welcome_start_button" để tránh trùng ID
+    if st.button("🚀 BẮT ĐẦU ĐÁNH GIÁ NGAY", use_container_width=True, key="welcome_start_button"):
+        st.session_state.current_page = "survey"
         st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
