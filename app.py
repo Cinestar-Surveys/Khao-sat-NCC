@@ -201,15 +201,19 @@ st.markdown(
         box-shadow: 0 18px 30px rgba(111, 66, 193, 0.24);
     }
 
-    div[data-baseweb="select"] > div,
-    div[data-baseweb="input"] > div,
-    .stTextInput input,
-    .stSelectbox input {
+    .stTextInput [data-baseweb="input"],
+    .stSelectbox [data-baseweb="select"] {
         border-radius: 16px !important;
         border: 1px solid var(--border) !important;
-        background: rgba(255, 255, 255, 0.9) !important;
-        min-height: 3.25rem !important;
+        background: rgba(255, 255, 255, 0.95) !important;
+        min-height: 3.2rem !important;
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
+    }
+
+    .stTextInput input,
+    .stSelectbox input {
+        font-size: 1rem !important;
+        color: var(--ink) !important;
     }
 
     [data-testid="stForm"] {
@@ -241,7 +245,7 @@ st.markdown(
     }
 
     [data-testid="stProgressBar"] > div > div {
-        background: linear-gradient(90deg, var(--brand), #2b6f90 70%, var(--accent)) !important;
+        background: linear-gradient(90deg, var(--brand), #845ad5 70%, var(--accent)) !important;
     }
 
     div[data-baseweb="notification"] {
@@ -607,6 +611,8 @@ if "confirm_submit_results" not in st.session_state:
     st.session_state.confirm_submit_results = False
 if "edited_nccs" not in st.session_state:
     st.session_state.edited_nccs = []
+if "last_saved_ncc" not in st.session_state:
+    st.session_state.last_saved_ncc = ""
 
 
 @st.cache_data
@@ -749,6 +755,7 @@ def replace_ncc_results(ncc_name, new_answers):
     st.session_state.confirm_submit_results = False
     st.session_state.last_api_status = None
     st.session_state.last_api_response = None
+    st.session_state.last_saved_ncc = ncc_name
 
 
 def clear_question_widget_states():
@@ -775,6 +782,43 @@ def scroll_page_to_top():
     )
 
 
+def bind_enter_to_button(button_text, binding_key):
+    # Cho phép nhấn Enter để kích hoạt nút hành động chính ở một số màn hình.
+    escaped_button_text = json.dumps(button_text)
+    escaped_binding_key = json.dumps(binding_key)
+    components.html(
+        f"""
+        <script>
+        const targetWindow = window.parent || window;
+        if (targetWindow && !targetWindow.__codexEnterBindings) {{
+            targetWindow.__codexEnterBindings = {{}};
+        }}
+        if (targetWindow && !targetWindow.__codexEnterBindings[{escaped_binding_key}]) {{
+            targetWindow.__codexEnterBindings[{escaped_binding_key}] = true;
+            targetWindow.document.addEventListener("keydown", function(event) {{
+                const active = targetWindow.document.activeElement;
+                const tagName = active ? active.tagName : "";
+                const inputType = active ? (active.getAttribute("type") || "") : "";
+                if (event.key !== "Enter" || event.shiftKey) {{
+                    return;
+                }}
+                if (tagName === "TEXTAREA" || inputType === "text" || inputType === "password") {{
+                    return;
+                }}
+                const buttons = Array.from(targetWindow.document.querySelectorAll("button"));
+                const matchedButton = buttons.find((button) => button.innerText.trim() === {escaped_button_text});
+                if (matchedButton && !matchedButton.disabled) {{
+                    event.preventDefault();
+                    matchedButton.click();
+                }}
+            }});
+        }}
+        </script>
+        """,
+        height=0,
+    )
+
+
 def reset_evaluation_flow():
     # Làm sạch toàn bộ dữ liệu tạm của một phiên đánh giá
     # nhưng vẫn giữ lại site và bộ phận đang đăng nhập.
@@ -788,6 +832,7 @@ def reset_evaluation_flow():
     st.session_state.last_api_response = None
     st.session_state.evaluator_name = ""
     st.session_state.scroll_to_top = False
+    st.session_state.last_saved_ncc = ""
     clear_question_widget_states()
 
 
@@ -952,10 +997,13 @@ if st.session_state.current_page == "login":
                 unsafe_allow_html=True,
             )
 
-            login_site = st.selectbox("🏢 Chọn Site", site_options, key="login_site_widget")
-            login_dept = st.selectbox("📁 Chọn Bộ phận", dept_options_login, key="login_dept_widget")
-            pwd = st.text_input("🔑 Mật khẩu truy cập", type="password")
-            if st.button("ĐĂNG NHẬP VÀO HỆ THỐNG"):
+            with st.form("login_form", clear_on_submit=False):
+                login_site = st.selectbox("🏢 Chọn Site", site_options, key="login_site_widget")
+                login_dept = st.selectbox("📁 Chọn Bộ phận", dept_options_login, key="login_dept_widget")
+                pwd = st.text_input("🔑 Mật khẩu truy cập", type="password")
+                submit_login = st.form_submit_button("ĐĂNG NHẬP VÀO HỆ THỐNG", use_container_width=True)
+
+            if submit_login:
                 if login_site == "-- Chọn Site --":
                     st.error("Vui lòng chọn Site trước khi đăng nhập.")
                 elif login_dept == "-- Chọn Bộ phận --":
@@ -988,35 +1036,9 @@ elif st.session_state.current_page == "welcome":
     st.markdown(
         """
         <style>
-        html, body, [data-testid="stApp"] {
-            height: 100vh;
-            overflow: hidden !important;
-        }
-        [data-testid="stAppViewContainer"] {
-            height: 100vh;
-            overflow: hidden !important;
-        }
         [data-testid="stMainBlockContainer"] {
-            height: 100vh;
-            min-height: 100vh;
-            box-sizing: border-box;
             padding-top: 1rem !important;
-            padding-bottom: 1rem !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden !important;
-        }
-        @media (max-width: 900px) {
-            [data-testid="stAppViewContainer"] {
-                overflow: auto !important;
-            }
-            [data-testid="stMainBlockContainer"] {
-                display: block;
-                min-height: auto;
-                padding-top: 1.25rem !important;
-                padding-bottom: 1.25rem !important;
-            }
+            padding-bottom: 1.5rem !important;
         }
         </style>
     """,
@@ -1150,10 +1172,10 @@ elif st.session_state.current_page == "evaluation":
             unsafe_allow_html=True,
         )
 
-        col1, col2, col3 = st.columns(3)
-        evaluator_name = col1.text_input("👤 Họ tên nhân viên đánh giá", key="evaluator_name")
-        col2.info(f"🏢 Site đăng nhập: {st.session_state.selected_site}")
-        col3.info(f"📁 Bộ phận đánh giá: {st.session_state.selected_dept}")
+        evaluator_name = st.text_input("👤 Họ tên nhân viên đánh giá", key="evaluator_name")
+        meta_col1, meta_col2 = st.columns(2)
+        meta_col1.info(f"🏢 Site đăng nhập: {st.session_state.selected_site}")
+        meta_col2.info(f"📁 Bộ phận đánh giá: {st.session_state.selected_dept}")
 
     selected_site = st.session_state.selected_site
     selected_dept = st.session_state.selected_dept
@@ -1168,6 +1190,11 @@ elif st.session_state.current_page == "evaluation":
         st.divider()
         if list_ncc:
             remaining_count = total_ncc - evaluated_count
+            if st.session_state.last_saved_ncc:
+                st.success(
+                    f"Đã lưu xong NCC: {st.session_state.last_saved_ncc}. Bạn có thể tiếp tục NCC tiếp theo hoặc chỉnh lại nếu cần."
+                )
+
             stat_tiles_markup = "".join(
                 [
                     build_stat_tile("Tổng NCC", total_ncc, "Danh sách của site hiện tại", "neutral"),
@@ -1197,12 +1224,16 @@ elif st.session_state.current_page == "evaluation":
             )
             st.progress(evaluated_count / total_ncc if total_ncc > 0 else 0)
             if total_ncc > 0 and evaluated_count == total_ncc:
-                st.success("Toàn bộ NCC của site đã hoàn tất. Bạn có thể chuyển sang bước review cuối.")
-                if st.button("🔍 Review lại & Up kết quả", type="primary", use_container_width=True):
-                    st.session_state.confirm_submit_results = False
-                    st.session_state.current_page = "review_submit"
-                    st.session_state.scroll_to_top = True
-                    st.rerun()
+                st.success("Toàn bộ NCC đã được đánh giá xong. Bạn có thể chỉnh lại nếu cần, hoặc chuyển sang bước nộp kết quả.")
+                action_col1, action_col2 = st.columns(2)
+                with action_col1:
+                    st.info("Nếu không cần chỉnh sửa thêm, hãy qua trang nộp kết quả.")
+                with action_col2:
+                    if st.button("🔍 Qua trang review & nộp kết quả", type="primary", use_container_width=True):
+                        st.session_state.confirm_submit_results = False
+                        st.session_state.current_page = "review_submit"
+                        st.session_state.scroll_to_top = True
+                        st.rerun()
             else:
                 st.info(f"Còn {remaining_count} NCC cần đánh giá trước khi mở bước review cuối.")
 
@@ -1327,6 +1358,7 @@ elif st.session_state.current_page == "evaluation":
                 else:
                     st.caption("📊 Tổng điểm sẽ hiển thị ngay khi bạn bắt đầu chọn các tiêu chí đánh giá.")
 
+                bind_enter_to_button("Lưu & Cập nhật kết quả NCC này", f"save-{current_ncc}")
                 if st.button("Lưu & Cập nhật kết quả NCC này", key=f"save_{current_ncc}", use_container_width=True):
                     if unanswered_questions:
                         st.error("Bạn cần chọn đầy đủ tất cả tiêu chí trước khi lưu.")
@@ -1395,7 +1427,7 @@ elif st.session_state.current_page == "review_submit":
 
     top_col1, top_col2 = st.columns([1, 1])
     with top_col1:
-        if st.button("⬅️ Quay lại chỉnh sửa", use_container_width=True):
+        if st.button("⬅️ Quay lại trang 3 để đánh giá lại", use_container_width=True):
             st.session_state.current_page = "evaluation"
             st.session_state.scroll_to_top = True
             st.rerun()
@@ -1443,41 +1475,44 @@ elif st.session_state.current_page == "review_submit":
         )
 
         st.markdown("### Tổng hợp theo NCC")
-        st.dataframe(
-            summary_df,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Tên NCC": st.column_config.TextColumn(width="large"),
-                "Số tiêu chí": st.column_config.NumberColumn(width="small"),
-                "Tổng điểm": st.column_config.NumberColumn(format="%.2f", width="small"),
-            },
-        )
+        with st.container(border=True):
+            st.dataframe(
+                summary_df,
+                use_container_width=True,
+                hide_index=True,
+                height=min(320, 42 * (len(summary_df) + 1)),
+                column_config={
+                    "Tên NCC": st.column_config.TextColumn(width="large"),
+                    "Số tiêu chí": st.column_config.NumberColumn(width="small"),
+                    "Tổng điểm": st.column_config.NumberColumn(format="%.2f", width="small"),
+                },
+            )
 
         st.markdown("### Chi tiết đánh giá")
         detail_ncc_options = summary_df["Tên NCC"].astype(str).tolist()
         if "review_detail_ncc" in st.session_state and st.session_state.review_detail_ncc not in detail_ncc_options:
             del st.session_state["review_detail_ncc"]
-        detail_selected_ncc = st.selectbox(
-            "Chọn NCC để xem chi tiết",
-            detail_ncc_options,
-            key="review_detail_ncc",
-        )
-        detail_df = review_df[review_df["Tên NCC"].astype(str) == str(detail_selected_ncc)].copy()
-        detail_df = detail_df[["Thời gian", "Nhóm", "Tiêu chí", "Lựa chọn", "Điểm"]]
-        st.dataframe(
-            detail_df,
-            use_container_width=True,
-            hide_index=True,
-            height=min(460, 42 * (len(detail_df) + 1)),
-            column_config={
-                "Thời gian": st.column_config.TextColumn(width="medium"),
-                "Nhóm": st.column_config.TextColumn(width="medium"),
-                "Tiêu chí": st.column_config.TextColumn(width="large"),
-                "Lựa chọn": st.column_config.TextColumn(width="large"),
-                "Điểm": st.column_config.NumberColumn(format="%.2f", width="small"),
-            },
-        )
+        with st.container(border=True):
+            detail_selected_ncc = st.selectbox(
+                "Chọn NCC để xem chi tiết",
+                detail_ncc_options,
+                key="review_detail_ncc",
+            )
+            detail_df = review_df[review_df["Tên NCC"].astype(str) == str(detail_selected_ncc)].copy()
+            detail_df = detail_df[["Thời gian", "Nhóm", "Tiêu chí", "Lựa chọn", "Điểm"]]
+            st.dataframe(
+                detail_df,
+                use_container_width=True,
+                hide_index=True,
+                height=min(360, 42 * (len(detail_df) + 1)),
+                column_config={
+                    "Thời gian": st.column_config.TextColumn(width="medium"),
+                    "Nhóm": st.column_config.TextColumn(width="medium"),
+                    "Tiêu chí": st.column_config.TextColumn(width="large"),
+                    "Lựa chọn": st.column_config.TextColumn(width="large"),
+                    "Điểm": st.column_config.NumberColumn(format="%.2f", width="small"),
+                },
+            )
 
         st.markdown(
             """
@@ -1496,6 +1531,7 @@ elif st.session_state.current_page == "review_submit":
             key="confirm_submit_results",
         )
 
+        bind_enter_to_button("🚀 XÁC NHẬN NỘP KẾT QUẢ", "submit-review")
         if st.button(
             "🚀 XÁC NHẬN NỘP KẾT QUẢ",
             type="primary",
