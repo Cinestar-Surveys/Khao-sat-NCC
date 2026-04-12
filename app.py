@@ -1482,8 +1482,11 @@ elif st.session_state.current_page == "evaluation":
         unsafe_allow_html=True,
     )
 
-    if st.session_state.pending_scroll_target == "evaluation_ncc_anchor":
-        scroll_to_element("evaluation_ncc_anchor")
+    if st.session_state.pending_scroll_target == "evaluation_form_anchor":
+        scroll_to_element("evaluation_form_anchor")
+        st.session_state.pending_scroll_target = ""
+    elif st.session_state.pending_scroll_target == "evaluation_review_anchor":
+        scroll_to_element("evaluation_review_anchor")
         st.session_state.pending_scroll_target = ""
     elif st.session_state.scroll_to_top:
         scroll_page_to_top()
@@ -1567,6 +1570,7 @@ elif st.session_state.current_page == "evaluation":
             )
             st.progress(evaluated_count / total_ncc if total_ncc > 0 else 0)
             if total_ncc > 0 and evaluated_count == total_ncc:
+                st.markdown('<div id="evaluation_review_anchor"></div>', unsafe_allow_html=True)
                 st.success("Toàn bộ NCC đã được đánh giá xong. Bạn có thể chỉnh lại nếu cần, hoặc chuyển sang bước nộp kết quả.")
                 action_col1, action_col2 = st.columns(2)
                 with action_col1:
@@ -1591,7 +1595,6 @@ elif st.session_state.current_page == "evaluation":
                 st.session_state.current_ncc_widget = st.session_state.current_ncc_selector
 
             # Chỉ giữ dropdown chọn NCC, không hiển thị danh sách NCC riêng bên cạnh.
-            st.markdown('<div id="evaluation_ncc_anchor"></div>', unsafe_allow_html=True)
             current_ncc = st.selectbox(
                 "👉 Chọn NCC để đánh giá hoặc đánh giá lại:",
                 list_ncc,
@@ -1615,6 +1618,7 @@ elif st.session_state.current_page == "evaluation":
             if current_ncc in st.session_state.edited_nccs:
                 st.caption("✏️ Đã chỉnh sửa: NCC này đã được cập nhật lại sau lần lưu đầu tiên.")
 
+            st.markdown('<div id="evaluation_form_anchor"></div>', unsafe_allow_html=True)
             with st.container(border=True):
                 # Lọc câu hỏi đúng với bộ phận mà người dùng đã chọn
                 st.markdown(
@@ -1717,10 +1721,14 @@ elif st.session_state.current_page == "evaluation":
                         saved_timestamp = get_local_timestamp_string()
                         answers_to_save = [{**answer, "Thời gian": saved_timestamp} for answer in current_answers]
                         replace_ncc_results(current_ncc, answers_to_save)
+                        completed_after_save = len([ncc for ncc in list_ncc if ncc in set(st.session_state.evaluated_nccs)])
                         next_ncc = get_next_pending_ncc(list_ncc)
                         st.session_state.current_ncc_selector = next_ncc
                         st.session_state.pending_ncc_widget_value = next_ncc
-                        st.session_state.pending_scroll_target = "evaluation_ncc_anchor"
+                        if completed_after_save == total_ncc:
+                            st.session_state.pending_scroll_target = "evaluation_review_anchor"
+                        else:
+                            st.session_state.pending_scroll_target = "evaluation_form_anchor"
                         st.rerun()
         else:
             st.warning("Site này chưa có NCC nào trong file dữ liệu.")
