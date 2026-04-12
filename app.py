@@ -1,4 +1,5 @@
 import base64
+import html
 import json
 import os
 import re
@@ -22,7 +23,7 @@ with open(".streamlit/config.toml", "w", encoding="utf-8") as f:
     f.write(
         """
 [theme]
-primaryColor="#6f42c1"
+primaryColor="#c67a1f"
 """
     )
 
@@ -66,6 +67,36 @@ def get_logo_data_uri(image_path):
     return f"data:{mime_type};base64,{encoded}"
 
 
+def safe_html(value):
+    return html.escape(str(value or ""))
+
+
+def build_logo_markup(css_class="brand-logo", fallback_text="CS"):
+    logo_data_uri = get_logo_data_uri(LOGO_URL)
+    if logo_data_uri:
+        return f'<img src="{logo_data_uri}" alt="Cinestar logo" class="{css_class}">'
+    return f'<div class="{css_class} brand-logo-fallback">{safe_html(fallback_text)}</div>'
+
+
+def build_meta_tile(label, value, icon=""):
+    return f"""
+    <div class="meta-tile">
+        <div class="meta-label">{safe_html(icon)} {safe_html(label)}</div>
+        <div class="meta-value">{safe_html(value)}</div>
+    </div>
+    """
+
+
+def build_stat_tile(label, value, detail="", tone="default"):
+    return f"""
+    <div class="stat-tile tone-{safe_html(tone)}">
+        <div class="stat-label">{safe_html(label)}</div>
+        <div class="stat-value">{safe_html(value)}</div>
+        <div class="stat-detail">{safe_html(detail)}</div>
+    </div>
+    """
+
+
 # =====================================================================
 # --- CẤU HÌNH THÔNG TIN CÔNG TY & BẢO MẬT
 # Ưu tiên lấy từ st.secrets, sau đó tới biến môi trường.
@@ -89,46 +120,446 @@ st.set_page_config(page_title="Đánh giá NCC Cinestar", layout="wide", page_ic
 st.markdown(
     """
     <style>
+    :root {
+        --bg-cream: #f6efe6;
+        --bg-soft: #fffaf4;
+        --panel: rgba(255, 252, 247, 0.9);
+        --panel-strong: #fffdf9;
+        --border: rgba(181, 144, 93, 0.24);
+        --border-strong: rgba(18, 59, 93, 0.18);
+        --ink: #1f2e3b;
+        --muted: #667789;
+        --brand: #123b5d;
+        --brand-deep: #0d2942;
+        --brand-soft: rgba(18, 59, 93, 0.08);
+        --accent: #c67a1f;
+        --accent-soft: rgba(198, 122, 31, 0.12);
+        --shadow-lg: 0 22px 60px rgba(38, 54, 69, 0.12);
+        --shadow-md: 0 14px 34px rgba(38, 54, 69, 0.08);
+        --radius-xl: 28px;
+        --radius-lg: 22px;
+        --radius-md: 16px;
+    }
+
+    html, body, [data-testid="stApp"], [data-testid="stAppViewContainer"] {
+        background:
+            radial-gradient(circle at top left, rgba(198, 122, 31, 0.14), transparent 28%),
+            radial-gradient(circle at top right, rgba(18, 59, 93, 0.12), transparent 26%),
+            linear-gradient(180deg, #fffaf4 0%, #f7f0e8 54%, #f4ede3 100%);
+        color: var(--ink);
+    }
+
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
+    * {
+        font-family: "Aptos", "Trebuchet MS", "Segoe UI", sans-serif;
+    }
+
+    h1, h2, h3, h4, h5 {
+        font-family: "Georgia", "Cambria", serif;
+        letter-spacing: -0.03em;
+        color: var(--brand-deep);
+    }
+
+    [data-testid="stMainBlockContainer"] {
+        max-width: 1240px;
+        padding-top: 1.3rem !important;
+        padding-bottom: 2rem !important;
+    }
+
+    [data-testid="stSidebar"] {
+        background:
+            radial-gradient(circle at top, rgba(198, 122, 31, 0.16), transparent 26%),
+            linear-gradient(180deg, rgba(255, 250, 244, 0.98), rgba(246, 239, 230, 0.98));
+        border-right: 1px solid var(--border);
+    }
+
     .stButton>button {
         width: 100%;
-        border-radius: 5px;
-        height: 3em;
-        background-color: #6f42c1 !important;
+        border-radius: 18px;
+        height: 3.2rem;
+        background: linear-gradient(135deg, var(--brand), #205a7b 65%, var(--accent)) !important;
         color: white !important;
-        font-weight: bold;
+        font-weight: 700;
         border: none;
+        box-shadow: 0 14px 28px rgba(18, 59, 93, 0.18);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
     }
 
     .stButton>button:hover {
-        background-color: #59339d !important;
+        background: linear-gradient(135deg, #17486f, #27698f 65%, #d38c36) !important;
         color: white !important;
+        transform: translateY(-1px);
+        box-shadow: 0 18px 30px rgba(18, 59, 93, 0.22);
     }
 
-    .header-container {
-        text-align: center;
-        padding: 20px;
-        border-bottom: 4px solid #6f42c1;
-        margin-bottom: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(111, 66, 193, 0.2);
-    }
-
-    .welcome-text {
-        font-size: 1.2rem;
-        line-height: 1.6;
-        text-align: center;
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px;
+    div[data-baseweb="select"] > div,
+    div[data-baseweb="input"] > div,
+    .stTextInput input,
+    .stSelectbox input {
+        border-radius: 16px !important;
+        border: 1px solid var(--border) !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+        min-height: 3.25rem !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
     }
 
     [data-testid="stForm"] {
-        border: 2px solid #6f42c1 !important;
-        border-radius: 10px;
+        border: 1px solid var(--border-strong) !important;
+        border-radius: 26px !important;
+        background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,250,244,0.92));
+        box-shadow: var(--shadow-md);
+        padding: 0.75rem;
+    }
+
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        border: 1px solid var(--border) !important;
+        border-radius: 24px !important;
+        background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,250,244,0.88));
+        box-shadow: 0 12px 32px rgba(33, 47, 61, 0.06);
+    }
+
+    label[data-testid="stWidgetLabel"] p {
+        color: var(--brand-deep);
+        font-weight: 700;
+    }
+
+    [data-testid="stMetric"] {
+        background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,250,244,0.86));
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1rem 1rem 0.85rem 1rem;
+        box-shadow: 0 10px 25px rgba(33, 47, 61, 0.05);
+    }
+
+    [data-testid="stProgressBar"] > div > div {
+        background: linear-gradient(90deg, var(--brand), #2b6f90 70%, var(--accent)) !important;
+    }
+
+    div[data-baseweb="notification"] {
+        border-radius: 18px !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 10px 24px rgba(33, 47, 61, 0.05);
+    }
+
+    .page-hero,
+    .login-hero,
+    .surface-card,
+    .panel-card,
+    .stat-tile,
+    .meta-tile {
+        animation: riseIn 0.45s ease both;
+    }
+
+    .page-hero {
+        position: relative;
+        overflow: hidden;
+        padding: 1.9rem 2rem;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border);
+        background:
+            radial-gradient(circle at top right, rgba(198, 122, 31, 0.16), transparent 28%),
+            linear-gradient(135deg, rgba(255,255,255,0.95), rgba(249,243,235,0.92));
+        box-shadow: var(--shadow-lg);
+        margin-bottom: 1.1rem;
+    }
+
+    .page-hero::after {
+        content: "";
+        position: absolute;
+        inset: auto 0 0 0;
+        height: 5px;
+        background: linear-gradient(90deg, var(--brand), var(--accent), var(--brand));
+    }
+
+    .hero-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.48rem 0.9rem;
+        border-radius: 999px;
+        background: var(--brand-soft);
+        color: var(--brand);
+        font-size: 0.88rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+    }
+
+    .hero-title {
+        margin: 0 0 0.45rem 0;
+        font-size: clamp(2.15rem, 4.2vw, 3.9rem);
+        line-height: 1.04;
+        color: var(--brand-deep);
+    }
+
+    .hero-copy {
+        margin: 0;
+        max-width: 760px;
+        color: var(--muted);
+        font-size: 1.02rem;
+        line-height: 1.8;
+    }
+
+    .hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.95fr);
+        gap: 1.3rem;
+        align-items: start;
+    }
+
+    .hero-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+    }
+
+    .brand-lockup {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.85rem;
+    }
+
+    .brand-logo {
+        width: 88px;
+        max-width: 88px;
+        border-radius: 22px;
+        object-fit: contain;
+        background: rgba(255,255,255,0.82);
+        padding: 0.45rem;
+        box-shadow: 0 14px 28px rgba(18, 59, 93, 0.12);
+    }
+
+    .brand-logo-fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1.25rem;
+        color: var(--brand);
+    }
+
+    .brand-mark {
+        font-size: 0.92rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--accent);
+        margin-bottom: 0.2rem;
+    }
+
+    .brand-name {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--brand-deep);
+        font-family: "Georgia", "Cambria", serif;
+    }
+
+    .login-shell {
+        margin: 0 auto;
+        max-width: 1180px;
+    }
+
+    .login-hero,
+    .surface-card,
+    .panel-card {
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(249,243,235,0.9));
+        box-shadow: var(--shadow-lg);
+        padding: 1.8rem;
+    }
+
+    .login-feature-grid,
+    .meta-grid,
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.9rem;
+    }
+
+    .feature-card,
+    .meta-tile,
+    .stat-tile {
+        border-radius: 20px;
+        padding: 1rem;
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,0.84);
+    }
+
+    .feature-title,
+    .meta-label,
+    .stat-label {
+        font-size: 0.8rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--brand);
+        margin-bottom: 0.35rem;
+    }
+
+    .feature-copy,
+    .meta-value,
+    .stat-detail {
+        font-size: 0.95rem;
+        line-height: 1.55;
+        color: var(--muted);
+    }
+
+    .meta-value,
+    .stat-value {
+        color: var(--brand-deep);
+        font-weight: 700;
+        font-size: 1.02rem;
+        line-height: 1.35;
+    }
+
+    .stat-value {
+        font-size: 1.9rem;
+        line-height: 1;
+        margin-bottom: 0.35rem;
+        font-family: "Georgia", "Cambria", serif;
+    }
+
+    .tone-progress {
+        background: linear-gradient(180deg, rgba(18,59,93,0.07), rgba(255,255,255,0.86));
+    }
+
+    .tone-ready {
+        background: linear-gradient(180deg, rgba(198,122,31,0.12), rgba(255,255,255,0.88));
+    }
+
+    .tone-neutral {
+        background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(247,240,232,0.9));
+    }
+
+    .section-eyebrow {
+        color: var(--accent);
+        font-size: 0.82rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.35rem;
+    }
+
+    .section-heading {
+        margin: 0 0 0.4rem 0;
+        font-size: 1.8rem;
+        color: var(--brand-deep);
+    }
+
+    .section-copy {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.7;
+        font-size: 0.97rem;
+    }
+
+    .inline-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        margin-top: 0.65rem;
+    }
+
+    .legend-chip {
+        padding: 0.4rem 0.8rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,0.78);
+        color: var(--muted);
+        font-size: 0.86rem;
+        font-weight: 600;
+    }
+
+    .legend-chip strong {
+        color: var(--brand-deep);
+    }
+
+    .page-note {
+        margin-top: 0.45rem;
+        color: var(--muted);
+        font-size: 0.93rem;
+        line-height: 1.65;
+    }
+
+    .compact-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+
+    .question-stage-title {
+        margin: 0.1rem 0 0.3rem 0;
+        color: var(--brand-deep);
+        font-size: 2rem;
+    }
+
+    .question-stage-subtitle {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.65;
+    }
+
+    @keyframes riseIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @media (max-width: 900px) {
+        [data-testid="stMainBlockContainer"] {
+            padding-top: 1rem !important;
+            padding-bottom: 1.5rem !important;
+        }
+
+        [data-testid="stHorizontalBlock"] {
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+
+        [data-testid="column"] {
+            width: 100% !important;
+            flex: 1 1 100% !important;
+        }
+
+        .page-hero,
+        .login-hero,
+        .surface-card,
+        .panel-card {
+            padding: 1.25rem;
+            border-radius: 24px;
+        }
+
+        .hero-grid,
+        .login-feature-grid,
+        .meta-grid,
+        .stat-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .hero-title {
+            font-size: clamp(1.9rem, 8vw, 2.6rem);
+        }
+
+        .brand-lockup {
+            align-items: flex-start;
+        }
+
+        .brand-logo {
+            width: 72px;
+            max-width: 72px;
+            border-radius: 18px;
+        }
     }
     </style>
 """,
@@ -144,6 +575,8 @@ if "current_page" not in st.session_state:
     st.session_state.current_page = "login"
 if "selected_site" not in st.session_state:
     st.session_state.selected_site = ""
+if "login_site_widget" not in st.session_state:
+    st.session_state.login_site_widget = "-- Chọn Site --"
 if "selected_dept" not in st.session_state:
     st.session_state.selected_dept = "-- Chọn Bộ phận --"
 if "login_dept_widget" not in st.session_state:
@@ -338,7 +771,7 @@ def scroll_page_to_top():
 
 def reset_evaluation_flow():
     # Làm sạch toàn bộ dữ liệu tạm của một phiên đánh giá
-    # nhưng vẫn giữ lại site đang đăng nhập.
+    # nhưng vẫn giữ lại site và bộ phận đang đăng nhập.
     st.session_state.evaluated_nccs = []
     st.session_state.edited_nccs = []
     st.session_state.all_results_buffer = []
@@ -347,8 +780,6 @@ def reset_evaluation_flow():
     st.session_state.confirm_submit_results = False
     st.session_state.last_api_status = None
     st.session_state.last_api_response = None
-    st.session_state.selected_dept = "-- Chọn Bộ phận --"
-    st.session_state.login_dept_widget = "-- Chọn Bộ phận --"
     st.session_state.evaluator_name = ""
     st.session_state.scroll_to_top = False
     clear_question_widget_states()
@@ -430,15 +861,21 @@ if st.session_state.current_page == "login":
     st.markdown(
         """
         <style>
-        [data-testid="stAppViewContainer"] {
-            overflow: hidden !important;
-        }
+        [data-testid="stAppViewContainer"] { overflow: hidden !important; }
         [data-testid="stMainBlockContainer"] {
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            height: 100vh;
-            padding-top: 0rem !important;
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+        }
+        @media (max-width: 900px) {
+            [data-testid="stAppViewContainer"] { overflow: auto !important; }
+            [data-testid="stMainBlockContainer"] {
+                min-height: auto;
+                display: block;
+            }
         }
         </style>
     """,
@@ -448,28 +885,71 @@ if st.session_state.current_page == "login":
     df_sites_login, df_depts_login, _ = load_input_files()
     site_options = ["-- Chọn Site --"] + (df_sites_login["Site"].dropna().unique().tolist() if not df_sites_login.empty else [])
     dept_options_login = get_department_options(df_depts_login)
+    if st.session_state.login_site_widget not in site_options:
+        st.session_state.login_site_widget = st.session_state.selected_site
+    if st.session_state.login_site_widget not in site_options:
+        st.session_state.login_site_widget = "-- Chọn Site --"
     if st.session_state.login_dept_widget not in dept_options_login:
         st.session_state.login_dept_widget = st.session_state.selected_dept
     if st.session_state.login_dept_widget not in dept_options_login:
         st.session_state.login_dept_widget = "-- Chọn Bộ phận --"
 
-    col_img1, col_img2, col_img3 = st.columns([1, 1.5, 1])
-    with col_img2:
-        try:
-            st.image(LOGO_URL, use_container_width=True)
-        except Exception:
-            pass
-        st.markdown("<h2 style='text-align: center;'>HỆ THỐNG ĐÁNH GIÁ NỘI BỘ</h2>", unsafe_allow_html=True)
+    logo_markup = build_logo_markup("brand-logo", "CS")
+    left_col, right_col = st.columns([1.2, 0.92])
 
-    st.write("<br>", unsafe_allow_html=True)
-    col_l, col_m, col_r = st.columns([1, 1, 1])
-    with col_m:
+    with left_col:
+        st.markdown(
+            f"""
+            <div class="login-hero">
+                <div class="hero-kicker">Cổng khảo sát nội bộ</div>
+                <div class="brand-lockup">
+                    {logo_markup}
+                    <div>
+                        <div class="brand-mark">Cinestar Vendor Review</div>
+                        <div class="brand-name">Đánh giá NCC theo từng site</div>
+                    </div>
+                </div>
+                <h1 class="hero-title">Đăng nhập một lần, hoàn tất cả phiên đánh giá.</h1>
+                <p class="hero-copy">
+                    Hệ thống được thiết kế để từng bộ phận đánh giá đúng nhóm câu hỏi của mình,
+                    đồng thời chỉ hiển thị đúng danh sách nhà cung cấp thuộc site đang đăng nhập.
+                </p>
+                <div class="login-feature-grid" style="margin-top: 1.2rem;">
+                    <div class="feature-card">
+                        <div class="feature-title">Phân quyền đơn giản</div>
+                        <div class="feature-copy">Chọn đúng site và bộ phận để hệ thống mở đúng phạm vi khảo sát.</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-title">Đánh giá có kiểm soát</div>
+                        <div class="feature-copy">Mỗi NCC được lưu riêng, có thể quay lại chỉnh sửa trước khi nộp chính thức.</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-title">Tối ưu cho di động</div>
+                        <div class="feature-copy">Giao diện gọn, nút bấm lớn, thao tác dễ dùng trên desktop lẫn điện thoại.</div>
+                    </div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with right_col:
         with st.container(border=True):
-            # Chọn site ngay từ bước đầu để hệ thống biết người dùng thuộc site nào.
-            login_site = st.selectbox("🏢 Chọn Site", site_options)
+            st.markdown(
+                """
+                <div class="section-eyebrow">Bước 1</div>
+                <h3 class="section-heading">Thông tin truy cập</h3>
+                <p class="section-copy">
+                    Chọn site, bộ phận đánh giá và nhập mật khẩu tương ứng để bắt đầu phiên khảo sát.
+                </p>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            login_site = st.selectbox("🏢 Chọn Site", site_options, key="login_site_widget")
             login_dept = st.selectbox("📁 Chọn Bộ phận", dept_options_login, key="login_dept_widget")
             pwd = st.text_input("🔑 Mật khẩu truy cập", type="password")
-            if st.button("ĐĂNG NHẬP"):
+            if st.button("ĐĂNG NHẬP VÀO HỆ THỐNG"):
                 if login_site == "-- Chọn Site --":
                     st.error("Vui lòng chọn Site trước khi đăng nhập.")
                 elif login_dept == "-- Chọn Bộ phận --":
@@ -481,6 +961,16 @@ if st.session_state.current_page == "login":
                     st.rerun()
                 else:
                     st.error("Sai mật khẩu. Vui lòng kiểm tra lại thông tin đăng nhập.")
+
+            st.markdown(
+                """
+                <p class="page-note">
+                    Mật khẩu đang được kiểm tra theo từng site. Sau khi đăng nhập thành công,
+                    bạn chỉ cần nhập tên nhân viên và bắt đầu đánh giá.
+                </p>
+                """,
+                unsafe_allow_html=True,
+            )
 
 
 # =====================================================================
@@ -504,145 +994,12 @@ elif st.session_state.current_page == "welcome":
             height: 100vh;
             min-height: 100vh;
             box-sizing: border-box;
-            padding-top: 0.8rem !important;
-            padding-bottom: 0.8rem !important;
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden !important;
-        }
-        .welcome-stage {
-            max-width: 1120px;
-            margin: 0 auto;
-            width: 100%;
-            max-height: calc(100vh - 1.6rem);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .welcome-card {
-            position: relative;
-            overflow: hidden;
-            padding: 1.85rem 2.25rem;
-            border-radius: 28px;
-            border: 1px solid rgba(111, 66, 193, 0.16);
-            background:
-                radial-gradient(circle at top right, rgba(111, 66, 193, 0.10), transparent 32%),
-                linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,244,255,0.96));
-            box-shadow: 0 24px 60px rgba(54, 44, 92, 0.10);
-        }
-        .welcome-card::after {
-            content: "";
-            position: absolute;
-            inset: auto 0 0 0;
-            height: 6px;
-            background: linear-gradient(90deg, #6f42c1, #8f63dd, #6f42c1);
-        }
-        .welcome-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            padding: 0.45rem 0.9rem;
-            border-radius: 999px;
-            background: rgba(111, 66, 193, 0.10);
-            color: #6f42c1;
-            font-weight: 700;
-            font-size: 0.92rem;
-            letter-spacing: 0.02em;
-            width: fit-content;
-            margin-bottom: 1.1rem;
-        }
-        .welcome-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.9fr);
-            gap: 1.5rem;
-            align-items: center;
-        }
-        .welcome-brand img {
-            max-width: 220px;
-        }
-        .welcome-title {
-            margin: 1rem 0 0.55rem 0;
-            font-size: clamp(2.35rem, 4vw, 4rem);
-            line-height: 1.06;
-            font-weight: 800;
-            color: #23283b;
-            letter-spacing: -0.03em;
-        }
-        .welcome-subtitle {
-            margin: 0 0 1.25rem 0;
-            color: #6f42c1;
-            font-size: 1.2rem;
-            font-weight: 700;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
-        }
-        .welcome-lead {
-            margin: 0 0 0.9rem 0;
-            font-size: 1.18rem;
-            font-weight: 700;
-            color: #2e3347;
-        }
-        .welcome-copy {
-            margin: 0;
-            font-size: 1.06rem;
-            line-height: 1.8;
-            color: #50556b;
-            max-width: 680px;
-        }
-        .welcome-note {
-            margin-top: 1.1rem;
-            font-size: 1.04rem;
-            font-style: italic;
-            color: #6c7286;
-        }
-        .welcome-side {
-            padding: 1.5rem;
-            border-radius: 22px;
-            background: linear-gradient(180deg, rgba(111, 66, 193, 0.11), rgba(111, 66, 193, 0.05));
-            border: 1px solid rgba(111, 66, 193, 0.14);
-        }
-        .welcome-side-title {
-            margin: 0 0 1rem 0;
-            font-size: 1rem;
-            font-weight: 800;
-            color: #2d3042;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-        }
-        .welcome-chip {
-            display: block;
-            width: 100%;
-            margin-bottom: 0.75rem;
-            padding: 0.9rem 1rem;
-            border-radius: 16px;
-            background: rgba(255,255,255,0.72);
-            border: 1px solid rgba(111, 66, 193, 0.08);
-            color: #31364a;
-            font-size: 0.98rem;
-            line-height: 1.45;
-        }
-        .welcome-chip strong {
-            display: block;
-            margin-bottom: 0.16rem;
-            color: #6f42c1;
-            font-size: 0.82rem;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-        }
-        .welcome-actions {
-            max-width: 520px;
-            margin: 0.65rem auto 0 auto;
-            text-align: center;
-        }
-        .welcome-actions p {
-            margin: 0 0 0.55rem 0;
-            color: #646b80;
-            font-size: 0.92rem;
-        }
-        .welcome-cta-slot {
-            max-width: 520px;
-            margin: 0 auto;
         }
         @media (max-width: 900px) {
             [data-testid="stAppViewContainer"] {
@@ -654,20 +1011,6 @@ elif st.session_state.current_page == "welcome":
                 padding-top: 1.25rem !important;
                 padding-bottom: 1.25rem !important;
             }
-            .welcome-card {
-                min-height: auto;
-                padding: 1.5rem 1.15rem;
-                border-radius: 22px;
-            }
-            .welcome-grid {
-                grid-template-columns: 1fr;
-            }
-            .welcome-brand img {
-                max-width: 180px;
-            }
-            .welcome-actions {
-                margin-top: 1.35rem;
-            }
         }
         </style>
     """,
@@ -675,46 +1018,45 @@ elif st.session_state.current_page == "welcome":
     )
 
     current_site = st.session_state.selected_site or "Site đã chọn"
-    logo_data_uri = get_logo_data_uri(LOGO_URL)
-    logo_markup = f'<div class="welcome-brand"><img src="{logo_data_uri}" alt="Cinestar logo"></div>' if logo_data_uri else ""
-
-    st.markdown('<div class="welcome-stage">', unsafe_allow_html=True)
+    logo_markup = build_logo_markup("brand-logo", "CS")
+    summary_tiles = "".join(
+        [
+            build_meta_tile("Site đăng nhập", current_site, "🏢"),
+            build_meta_tile("Bộ phận đánh giá", st.session_state.selected_dept or "--", "📁"),
+            build_meta_tile("Phạm vi khảo sát", "Danh sách NCC theo site đã đăng nhập", "🎯"),
+        ]
+    )
     st.markdown(
         f"""
-        <div class="welcome-card">
-            <div class="welcome-badge">KHỞI ĐỘNG KHẢO SÁT NỘI BỘ</div>
-            <div class="welcome-grid">
+        <div class="page-hero">
+            <div class="hero-kicker">Khởi động phiên đánh giá</div>
+            <div class="hero-grid">
                 <div>
-                    {logo_markup}
-                    <h1 class="welcome-title">Khảo sát đánh giá Nhà cung cấp</h1>
-                    <p class="welcome-subtitle">Cinestar Cinemas Vietnam</p>
-                    <p class="welcome-lead">Hãy để người trải nghiệm trực tiếp lên tiếng!</p>
-                    <p class="welcome-copy">
+                    <div class="brand-lockup">
+                        {logo_markup}
+                        <div>
+                            <div class="brand-mark">Cinestar Cinemas Vietnam</div>
+                            <div class="brand-name">Khảo sát đánh giá Nhà cung cấp</div>
+                        </div>
+                    </div>
+                    <h1 class="hero-title">Hãy để người trải nghiệm trực tiếp lên tiếng.</h1>
+                    <p class="hero-copy">
                         Chào mừng bạn đến với hệ thống đánh giá chất lượng nhà cung cấp định kỳ.
                         Mọi ý kiến của bạn là cơ sở để công ty nhìn nhận đúng năng lực đối tác,
                         từ đó nâng cao chất lượng dịch vụ và tối ưu hóa vận hành tại từng site.
                     </p>
-                    <p class="welcome-note">
+                    <p class="page-note">
                         Hoàn thành khảo sát với góc nhìn thực tế, khách quan và đầy đủ nhất để kết quả phản ánh đúng chất lượng hợp tác.
                     </p>
                 </div>
-                <div class="welcome-side">
-                    <p class="welcome-side-title">Thông Tin Phiên Đánh Giá</p>
-                    <div class="welcome-chip">
-                        <strong>Site đăng nhập</strong>
-                        {current_site}
-                    </div>
-                    <div class="welcome-chip">
-                        <strong>Phạm vi khảo sát</strong>
-                        Chỉ hiển thị đúng danh sách nhà cung cấp thuộc site đang đăng nhập.
-                    </div>
-                    <div class="welcome-chip">
-                        <strong>Bộ phận đánh giá</strong>
-                        {st.session_state.selected_dept or "--"}
-                    </div>
-                    <div class="welcome-chip" style="margin-bottom: 0;">
-                        <strong>Mục tiêu</strong>
-                        Đánh giá định kỳ để cải thiện chất lượng dịch vụ, tiến độ và mức độ phối hợp.
+                <div class="hero-stack">
+                    {summary_tiles}
+                    <div class="panel-card" style="padding: 1.15rem;">
+                        <div class="feature-title">Mục tiêu phiên khảo sát</div>
+                        <div class="feature-copy">
+                            Đánh giá định kỳ để cải thiện chất lượng dịch vụ, tiến độ cung ứng
+                            và mức độ phối hợp với từng nhà cung cấp.
+                        </div>
                     </div>
                 </div>
             </div>
@@ -723,13 +1065,22 @@ elif st.session_state.current_page == "welcome":
         unsafe_allow_html=True,
     )
 
-    st.markdown('<div class="welcome-actions"><p>Sẵn sàng bắt đầu? Nhấn nút bên dưới để chuyển sang danh sách đánh giá của site.</p></div>', unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1.35, 1, 1.35])
-    with col2:
-        if st.button("🚀 BẮT ĐẦU ĐÁNH GIÁ NGAY", use_container_width=True):
-            st.session_state.current_page = "evaluation"
-            st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="surface-card" style="margin-top: 0.9rem;">
+            <div class="section-eyebrow">Sẵn sàng bắt đầu?</div>
+            <h3 class="section-heading">Chuyển sang khu vực đánh giá chi tiết</h3>
+            <p class="section-copy">
+                Ở bước tiếp theo, bạn sẽ chọn từng NCC trong site hiện tại, hoàn tất đánh giá
+                theo đúng bộ phận và lưu kết quả trước khi review lần cuối.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if st.button("🚀 BẮT ĐẦU ĐÁNH GIÁ NGAY", use_container_width=True):
+        st.session_state.current_page = "evaluation"
+        st.rerun()
 
 
 # =====================================================================
@@ -750,8 +1101,20 @@ elif st.session_state.current_page == "evaluation":
         st.session_state.clear()
         st.rerun()
 
-    st.markdown("<h2>📋 BẢNG ĐÁNH GIÁ CHI TIẾT</h2>", unsafe_allow_html=True)
-    st.caption("Vui lòng điền thông tin và hoàn thành toàn bộ danh sách nhà cung cấp của Site.")
+    st.markdown(
+        f"""
+        <div class="page-hero">
+            <div class="hero-kicker">Bước 2 · Đánh giá chi tiết</div>
+            <h1 class="hero-title">Bảng đánh giá nhà cung cấp</h1>
+            <p class="hero-copy">
+                Hoàn tất lần lượt từng NCC trong site <strong>{safe_html(st.session_state.selected_site or "--")}</strong>,
+                với bộ câu hỏi dành riêng cho bộ phận <strong>{safe_html(st.session_state.selected_dept or "--")}</strong>.
+                Hệ thống sẽ lưu tạm từng NCC để bạn review lại trước khi nộp chính thức.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     if st.session_state.scroll_to_top:
         scroll_page_to_top()
@@ -770,7 +1133,18 @@ elif st.session_state.current_page == "evaluation":
     df_sites, _, df_questions = load_input_files()
 
     with st.container(border=True):
-        # Khối nhập thông tin chung của người đánh giá
+        st.markdown(
+            """
+            <div class="section-eyebrow">Thông tin phiên làm việc</div>
+            <h3 class="section-heading">Xác nhận người thực hiện đánh giá</h3>
+            <p class="section-copy">
+                Chỉ cần nhập tên nhân viên. Site và bộ phận đã được cố định từ bước đăng nhập
+                để đảm bảo mỗi người đánh giá đúng bộ câu hỏi của mình.
+            </p>
+            """,
+            unsafe_allow_html=True,
+        )
+
         col1, col2, col3 = st.columns(3)
         evaluator_name = col1.text_input("👤 Họ tên nhân viên đánh giá", key="evaluator_name")
         col2.info(f"🏢 Site đăng nhập: {st.session_state.selected_site}")
@@ -788,28 +1162,44 @@ elif st.session_state.current_page == "evaluation":
 
         st.divider()
         if list_ncc:
-            # Đưa tiến độ lên đầu trang, giữ lại dropdown đánh giá ở khối chính.
-            header_col, action_col = st.columns([2.3, 1.2])
-            with header_col:
-                st.markdown(f"<h3>🎯 Tiến độ Site: {selected_site}</h3>", unsafe_allow_html=True)
-                st.progress(evaluated_count / total_ncc if total_ncc > 0 else 0)
-                st.write(f"**Đã hoàn thành:** {evaluated_count} / {total_ncc} NCC")
-                if evaluated_count < total_ncc:
-                    st.caption(f"NCC tiếp theo được gợi ý: {get_next_pending_ncc(list_ncc)}")
-                else:
-                    st.caption("Bạn đã hoàn tất toàn bộ NCC. Có thể review lại hoặc chọn NCC bên dưới để chỉnh sửa.")
+            remaining_count = total_ncc - evaluated_count
+            stat_tiles_markup = "".join(
+                [
+                    build_stat_tile("Tổng NCC", total_ncc, "Danh sách của site hiện tại", "neutral"),
+                    build_stat_tile("Đã hoàn tất", evaluated_count, "Các NCC đã được lưu", "progress"),
+                    build_stat_tile(
+                        "Còn lại",
+                        remaining_count,
+                        "Tiếp tục lần lượt cho đến khi đủ toàn bộ",
+                        "ready" if remaining_count == 0 else "neutral",
+                    ),
+                ]
+            )
 
-            with action_col:
-                if total_ncc > 0 and evaluated_count == total_ncc:
-                    st.success("Đã sẵn sàng review và nộp kết quả.")
-                    if st.button("🔍 Review lại & Up kết quả", type="primary", use_container_width=True):
-                        st.session_state.confirm_submit_results = False
-                        st.session_state.current_page = "review_submit"
-                        st.session_state.scroll_to_top = True
-                        st.rerun()
-                else:
-                    remaining_count = total_ncc - evaluated_count
-                    st.info(f"Còn {remaining_count} NCC cần đánh giá.")
+            st.markdown(
+                f"""
+                <div class="surface-card">
+                    <div class="section-eyebrow">Tiến độ phiên đánh giá</div>
+                    <h3 class="section-heading">Theo dõi nhanh trạng thái hoàn tất</h3>
+                    <p class="section-copy">
+                        NCC tiếp theo được gợi ý: <strong>{safe_html(get_next_pending_ncc(list_ncc))}</strong>.
+                        Bạn có thể chọn lại NCC đã lưu để cập nhật trước khi nộp.
+                    </p>
+                    <div class="stat-grid" style="margin-top: 1rem;">{stat_tiles_markup}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            st.progress(evaluated_count / total_ncc if total_ncc > 0 else 0)
+            if total_ncc > 0 and evaluated_count == total_ncc:
+                st.success("Toàn bộ NCC của site đã hoàn tất. Bạn có thể chuyển sang bước review cuối.")
+                if st.button("🔍 Review lại & Up kết quả", type="primary", use_container_width=True):
+                    st.session_state.confirm_submit_results = False
+                    st.session_state.current_page = "review_submit"
+                    st.session_state.scroll_to_top = True
+                    st.rerun()
+            else:
+                st.info(f"Còn {remaining_count} NCC cần đánh giá trước khi mở bước review cuối.")
 
             # Tự động trỏ tới NCC chưa hoàn thành tiếp theo để thao tác nhanh hơn.
             if st.session_state.current_ncc_selector not in list_ncc:
@@ -827,7 +1217,16 @@ elif st.session_state.current_page == "evaluation":
                 format_func=lambda ncc: format_ncc_status_label(ncc, evaluated_nccs_for_site),
             )
             st.session_state.current_ncc_selector = current_ncc
-            st.caption("🟡 Chưa hoàn tất   |   🟢 Đã lưu   |   🟠 Đã chỉnh sửa")
+            st.markdown(
+                """
+                <div class="inline-legend">
+                    <span class="legend-chip"><strong>🟡</strong> Chưa hoàn tất</span>
+                    <span class="legend-chip"><strong>🟢</strong> Đã lưu</span>
+                    <span class="legend-chip"><strong>🟠</strong> Đã chỉnh sửa</span>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
             if current_ncc in evaluated_nccs_for_site:
                 st.info("NCC này đã được lưu trước đó. Nếu bạn chỉnh lại và bấm lưu, hệ thống sẽ thay kết quả cũ bằng kết quả mới.")
@@ -836,7 +1235,16 @@ elif st.session_state.current_page == "evaluation":
 
             with st.form(key=f"form_{current_ncc}"):
                 # Lọc câu hỏi đúng với bộ phận mà người dùng đã chọn
-                st.markdown(f"<h4 style='color: #6f42c1;'>Đang đánh giá: {current_ncc}</h4>", unsafe_allow_html=True)
+                st.markdown(
+                    f"""
+                    <div class="section-eyebrow">Biểu mẫu đánh giá</div>
+                    <h3 class="question-stage-title">{safe_html(current_ncc)}</h3>
+                    <p class="question-stage-subtitle">
+                        Hoàn tất tất cả tiêu chí bên dưới để lưu NCC này. Bạn có thể quay lại chỉnh sửa trước khi nộp cuối cùng.
+                    </p>
+                    """,
+                    unsafe_allow_html=True,
+                )
                 df_q_filtered = df_questions[
                     df_questions["Câu hỏi dành cho bộ phận"].map(
                         lambda value: question_matches_department(value, selected_dept)
@@ -949,8 +1357,20 @@ elif st.session_state.current_page == "review_submit":
         st.session_state.clear()
         st.rerun()
 
-    st.markdown("<h2>🧾 REVIEW & NỘP KẾT QUẢ</h2>", unsafe_allow_html=True)
-    st.caption("Kiểm tra lại dữ liệu trước khi gửi chính thức vào hệ thống.")
+    st.markdown(
+        f"""
+        <div class="page-hero">
+            <div class="hero-kicker">Bước 3 · Review & Submit</div>
+            <h1 class="hero-title">Kiểm tra lần cuối trước khi nộp</h1>
+            <p class="hero-copy">
+                Đây là bước xác nhận cuối cùng cho site <strong>{safe_html(st.session_state.selected_site or "--")}</strong>
+                và bộ phận <strong>{safe_html(st.session_state.selected_dept or "--")}</strong>. Hãy rà lại toàn bộ
+                dữ liệu trước khi gửi chính thức vào hệ thống.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     if st.session_state.scroll_to_top:
         scroll_page_to_top()
@@ -978,7 +1398,15 @@ elif st.session_state.current_page == "review_submit":
             st.session_state.scroll_to_top = True
             st.rerun()
     with top_col2:
-        st.button("📤 Trang review sẵn sàng nộp", use_container_width=True, disabled=True)
+        st.markdown(
+            """
+            <div class="panel-card" style="padding: 1rem 1.1rem;">
+                <div class="feature-title">Trạng thái hiện tại</div>
+                <div class="feature-copy">Trang review đã sẵn sàng cho bước xác nhận nộp kết quả.</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     if total_ncc == 0:
         st.warning("Site này chưa có NCC nào trong file dữ liệu.")
@@ -989,14 +1417,28 @@ elif st.session_state.current_page == "review_submit":
     else:
         review_df = pd.DataFrame(st.session_state.all_results_buffer)
         summary_df = build_review_summary_df(st.session_state.all_results_buffer)
+        summary_tiles_markup = "".join(
+            [
+                build_stat_tile("Site", selected_site, "Phạm vi nhà cung cấp đang nộp", "neutral"),
+                build_stat_tile("Bộ phận", st.session_state.selected_dept, "Bộ câu hỏi đã sử dụng", "progress"),
+                build_stat_tile("Số NCC", f"{evaluated_count}/{total_ncc}", "Tất cả NCC đã hoàn tất", "ready"),
+            ]
+        )
 
-        with st.container(border=True):
-            info_col1, info_col2, info_col3 = st.columns(3)
-            info_col1.metric("Site", selected_site)
-            info_col2.metric("Bộ phận", st.session_state.selected_dept)
-            info_col3.metric("Số NCC đã hoàn tất", f"{evaluated_count}/{total_ncc}")
-            st.write(f"**Người đánh giá:** {st.session_state.evaluator_name}")
-            st.write(f"**Số dòng dữ liệu chuẩn bị gửi:** {len(review_df)}")
+        st.markdown(
+            f"""
+            <div class="surface-card">
+                <div class="section-eyebrow">Tổng hợp phiên nộp</div>
+                <h3 class="section-heading">Thông tin xác nhận</h3>
+                <p class="section-copy">
+                    Người đánh giá: <strong>{safe_html(st.session_state.evaluator_name)}</strong>.
+                    Tổng số dòng dữ liệu chuẩn bị gửi: <strong>{safe_html(len(review_df))}</strong>.
+                </p>
+                <div class="stat-grid" style="margin-top: 1rem;">{summary_tiles_markup}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
         st.markdown("### Tổng hợp theo NCC")
         st.dataframe(summary_df, use_container_width=True, hide_index=True)
@@ -1004,7 +1446,18 @@ elif st.session_state.current_page == "review_submit":
         with st.expander("Xem toàn bộ dữ liệu chi tiết", expanded=True):
             st.dataframe(review_df, use_container_width=True, hide_index=True)
 
-        st.warning("Sau khi xác nhận nộp, dữ liệu sẽ được gửi lên hệ thống. Nếu cần sửa, hãy quay lại trang đánh giá.")
+        st.markdown(
+            """
+            <div class="panel-card" style="margin-top: 0.9rem;">
+                <div class="feature-title">Xác nhận nộp dữ liệu</div>
+                <div class="feature-copy">
+                    Sau khi xác nhận nộp, dữ liệu sẽ được gửi lên hệ thống. Nếu cần chỉnh sửa,
+                    hãy quay lại bước đánh giá trước khi bấm nút xác nhận cuối cùng.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         st.checkbox(
             "Tôi đã review xong và muốn nộp toàn bộ kết quả vào hệ thống.",
             key="confirm_submit_results",
