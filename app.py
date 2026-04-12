@@ -103,6 +103,15 @@ def get_local_timestamp_string():
     return pd.Timestamp.now(tz=ZoneInfo("Asia/Ho_Chi_Minh")).strftime("%d/%m/%Y %H:%M:%S")
 
 
+def build_ncc_status_badge(ncc_name, status_label, tone):
+    return f"""
+    <div class="ncc-status-chip tone-{safe_html(tone)}">
+        <span class="ncc-status-chip-label">{safe_html(status_label)}</span>
+        <span class="ncc-status-chip-name">{safe_html(ncc_name)}</span>
+    </div>
+    """
+
+
 # =====================================================================
 # --- CẤU HÌNH THÔNG TIN CÔNG TY & BẢO MẬT
 # Ưu tiên lấy từ st.secrets, sau đó tới biến môi trường.
@@ -205,7 +214,7 @@ st.markdown(
     .stSelectbox [data-baseweb="select"] {
         border-radius: 16px !important;
         border: 1px solid var(--border) !important;
-        background: rgba(255, 255, 255, 0.95) !important;
+        background: #ffffff !important;
         min-height: 3.2rem !important;
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
     }
@@ -214,12 +223,18 @@ st.markdown(
     .stSelectbox input {
         font-size: 1rem !important;
         color: var(--ink) !important;
+        background: #ffffff !important;
+    }
+
+    .stTextInput [data-baseweb="input"] *,
+    .stSelectbox [data-baseweb="select"] * {
+        background-color: transparent !important;
     }
 
     [data-testid="stForm"] {
         border: 1px solid var(--border-strong) !important;
         border-radius: 26px !important;
-        background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(247,242,255,0.92));
+        background: #ffffff;
         box-shadow: var(--shadow-md);
         padding: 0.75rem;
     }
@@ -227,7 +242,7 @@ st.markdown(
     [data-testid="stVerticalBlockBorderWrapper"] {
         border: 1px solid var(--border) !important;
         border-radius: 24px !important;
-        background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(246,241,255,0.88));
+        background: #ffffff;
         box-shadow: 0 12px 32px rgba(33, 47, 61, 0.06);
     }
 
@@ -237,7 +252,7 @@ st.markdown(
     }
 
     [data-testid="stMetric"] {
-        background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(246,241,255,0.86));
+        background: #ffffff;
         border: 1px solid var(--border);
         border-radius: 20px;
         padding: 1rem 1rem 0.85rem 1rem;
@@ -252,6 +267,7 @@ st.markdown(
         border-radius: 18px !important;
         border: 1px solid var(--border) !important;
         box-shadow: 0 10px 24px rgba(33, 47, 61, 0.05);
+        background: #ffffff !important;
     }
 
     .page-hero,
@@ -379,7 +395,7 @@ st.markdown(
     .panel-card {
         border-radius: var(--radius-xl);
         border: 1px solid var(--border);
-        background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(244,238,255,0.9));
+        background: #ffffff;
         box-shadow: var(--shadow-lg);
         padding: 1.8rem;
     }
@@ -398,7 +414,7 @@ st.markdown(
         border-radius: 20px;
         padding: 1rem;
         border: 1px solid var(--border);
-        background: rgba(255,255,255,0.88);
+        background: #ffffff;
     }
 
     .feature-title,
@@ -488,6 +504,45 @@ st.markdown(
 
     .legend-chip strong {
         color: var(--brand-deep);
+    }
+
+    .ncc-status-board {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+        margin-top: 0.9rem;
+    }
+
+    .ncc-status-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.58rem 0.82rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: #ffffff;
+        font-size: 0.92rem;
+        line-height: 1.3;
+    }
+
+    .ncc-status-chip-label {
+        font-weight: 800;
+        color: var(--brand-deep);
+        white-space: nowrap;
+    }
+
+    .ncc-status-chip-name {
+        color: var(--ink);
+    }
+
+    .ncc-status-chip.tone-done {
+        border-color: rgba(42, 160, 92, 0.28);
+        background: #ffffff;
+    }
+
+    .ncc-status-chip.tone-edited {
+        border-color: rgba(214, 132, 31, 0.28);
+        background: #ffffff;
     }
 
     .page-note {
@@ -1264,6 +1319,34 @@ elif st.session_state.current_page == "evaluation":
                 unsafe_allow_html=True,
             )
 
+            completed_badges = "".join(
+                [
+                    build_ncc_status_badge(ncc, "Đã lưu", "done")
+                    for ncc in evaluated_nccs_for_site
+                    if ncc not in st.session_state.edited_nccs
+                ]
+            )
+            edited_badges = "".join(
+                [
+                    build_ncc_status_badge(ncc, "Đã chỉnh sửa", "edited")
+                    for ncc in list_ncc
+                    if ncc in st.session_state.edited_nccs
+                ]
+            )
+            if completed_badges or edited_badges:
+                st.markdown(
+                    f"""
+                    <div class="panel-card" style="padding: 1rem 1.1rem; margin-top: 0.8rem;">
+                        <div class="feature-title">NCC đã hoàn tất trong phiên này</div>
+                        <div class="feature-copy">
+                            Các NCC đã lưu hoặc đã chỉnh sửa sẽ hiện ngay bên ngoài dropdown để bạn theo dõi nhanh.
+                        </div>
+                        <div class="ncc-status-board">{completed_badges}{edited_badges}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
             if current_ncc in evaluated_nccs_for_site:
                 st.info("NCC này đã được lưu trước đó. Nếu bạn chỉnh lại và bấm lưu, hệ thống sẽ thay kết quả cũ bằng kết quả mới.")
             if current_ncc in st.session_state.edited_nccs:
@@ -1428,6 +1511,7 @@ elif st.session_state.current_page == "review_submit":
     top_col1, top_col2 = st.columns([1, 1])
     with top_col1:
         if st.button("⬅️ Quay lại trang 3 để đánh giá lại", use_container_width=True):
+            st.session_state.evaluator_name = st.session_state.get("evaluator_name", "")
             st.session_state.current_page = "evaluation"
             st.session_state.scroll_to_top = True
             st.rerun()
