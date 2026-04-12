@@ -4,6 +4,7 @@ import json
 import os
 import re
 import time
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import requests
@@ -23,7 +24,7 @@ with open(".streamlit/config.toml", "w", encoding="utf-8") as f:
     f.write(
         """
 [theme]
-primaryColor="#c67a1f"
+primaryColor="#6f42c1"
 """
     )
 
@@ -97,6 +98,11 @@ def build_stat_tile(label, value, detail="", tone="default"):
     """
 
 
+def get_local_timestamp_string():
+    # Dùng giờ Việt Nam để hiển thị nhất quán trong review và dữ liệu gửi đi.
+    return pd.Timestamp.now(tz=ZoneInfo("Asia/Ho_Chi_Minh")).strftime("%d/%m/%Y %H:%M:%S")
+
+
 # =====================================================================
 # --- CẤU HÌNH THÔNG TIN CÔNG TY & BẢO MẬT
 # Ưu tiên lấy từ st.secrets, sau đó tới biến môi trường.
@@ -121,19 +127,19 @@ st.markdown(
     """
     <style>
     :root {
-        --bg-cream: #f6efe6;
-        --bg-soft: #fffaf4;
-        --panel: rgba(255, 252, 247, 0.9);
-        --panel-strong: #fffdf9;
-        --border: rgba(181, 144, 93, 0.24);
-        --border-strong: rgba(18, 59, 93, 0.18);
-        --ink: #1f2e3b;
-        --muted: #667789;
-        --brand: #123b5d;
-        --brand-deep: #0d2942;
-        --brand-soft: rgba(18, 59, 93, 0.08);
-        --accent: #c67a1f;
-        --accent-soft: rgba(198, 122, 31, 0.12);
+        --bg-cream: #f7f3ff;
+        --bg-soft: #fcfaff;
+        --panel: rgba(255, 252, 255, 0.92);
+        --panel-strong: #fffdfd;
+        --border: rgba(111, 66, 193, 0.18);
+        --border-strong: rgba(111, 66, 193, 0.24);
+        --ink: #22324a;
+        --muted: #66738d;
+        --brand: #6f42c1;
+        --brand-deep: #4f2f8f;
+        --brand-soft: rgba(111, 66, 193, 0.10);
+        --accent: #8f63dd;
+        --accent-soft: rgba(143, 99, 221, 0.14);
         --shadow-lg: 0 22px 60px rgba(38, 54, 69, 0.12);
         --shadow-md: 0 14px 34px rgba(38, 54, 69, 0.08);
         --radius-xl: 28px;
@@ -143,9 +149,9 @@ st.markdown(
 
     html, body, [data-testid="stApp"], [data-testid="stAppViewContainer"] {
         background:
-            radial-gradient(circle at top left, rgba(198, 122, 31, 0.14), transparent 28%),
-            radial-gradient(circle at top right, rgba(18, 59, 93, 0.12), transparent 26%),
-            linear-gradient(180deg, #fffaf4 0%, #f7f0e8 54%, #f4ede3 100%);
+            radial-gradient(circle at top left, rgba(143, 99, 221, 0.16), transparent 28%),
+            radial-gradient(circle at top right, rgba(111, 66, 193, 0.12), transparent 26%),
+            linear-gradient(180deg, #fcfaff 0%, #f6f0ff 54%, #f2ebff 100%);
         color: var(--ink);
     }
 
@@ -154,12 +160,12 @@ st.markdown(
     header {visibility: hidden;}
 
     * {
-        font-family: "Aptos", "Trebuchet MS", "Segoe UI", sans-serif;
+        font-family: "Segoe UI", Arial, Helvetica, sans-serif;
     }
 
     h1, h2, h3, h4, h5 {
-        font-family: "Georgia", "Cambria", serif;
-        letter-spacing: -0.03em;
+        font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+        letter-spacing: -0.02em;
         color: var(--brand-deep);
     }
 
@@ -171,8 +177,8 @@ st.markdown(
 
     [data-testid="stSidebar"] {
         background:
-            radial-gradient(circle at top, rgba(198, 122, 31, 0.16), transparent 26%),
-            linear-gradient(180deg, rgba(255, 250, 244, 0.98), rgba(246, 239, 230, 0.98));
+            radial-gradient(circle at top, rgba(143, 99, 221, 0.16), transparent 26%),
+            linear-gradient(180deg, rgba(252, 250, 255, 0.98), rgba(244, 238, 255, 0.98));
         border-right: 1px solid var(--border);
     }
 
@@ -180,19 +186,19 @@ st.markdown(
         width: 100%;
         border-radius: 18px;
         height: 3.2rem;
-        background: linear-gradient(135deg, var(--brand), #205a7b 65%, var(--accent)) !important;
+        background: linear-gradient(135deg, var(--brand), #7f54cf 65%, var(--accent)) !important;
         color: white !important;
         font-weight: 700;
         border: none;
-        box-shadow: 0 14px 28px rgba(18, 59, 93, 0.18);
+        box-shadow: 0 14px 28px rgba(111, 66, 193, 0.20);
         transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
     }
 
     .stButton>button:hover {
-        background: linear-gradient(135deg, #17486f, #27698f 65%, #d38c36) !important;
+        background: linear-gradient(135deg, #5c34aa, #7d55ce 65%, #9b74e3) !important;
         color: white !important;
         transform: translateY(-1px);
-        box-shadow: 0 18px 30px rgba(18, 59, 93, 0.22);
+        box-shadow: 0 18px 30px rgba(111, 66, 193, 0.24);
     }
 
     div[data-baseweb="select"] > div,
@@ -209,7 +215,7 @@ st.markdown(
     [data-testid="stForm"] {
         border: 1px solid var(--border-strong) !important;
         border-radius: 26px !important;
-        background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,250,244,0.92));
+        background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(247,242,255,0.92));
         box-shadow: var(--shadow-md);
         padding: 0.75rem;
     }
@@ -217,7 +223,7 @@ st.markdown(
     [data-testid="stVerticalBlockBorderWrapper"] {
         border: 1px solid var(--border) !important;
         border-radius: 24px !important;
-        background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,250,244,0.88));
+        background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(246,241,255,0.88));
         box-shadow: 0 12px 32px rgba(33, 47, 61, 0.06);
     }
 
@@ -227,7 +233,7 @@ st.markdown(
     }
 
     [data-testid="stMetric"] {
-        background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,250,244,0.86));
+        background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(246,241,255,0.86));
         border: 1px solid var(--border);
         border-radius: 20px;
         padding: 1rem 1rem 0.85rem 1rem;
@@ -260,8 +266,8 @@ st.markdown(
         border-radius: var(--radius-xl);
         border: 1px solid var(--border);
         background:
-            radial-gradient(circle at top right, rgba(198, 122, 31, 0.16), transparent 28%),
-            linear-gradient(135deg, rgba(255,255,255,0.95), rgba(249,243,235,0.92));
+            radial-gradient(circle at top right, rgba(143, 99, 221, 0.16), transparent 28%),
+            linear-gradient(135deg, rgba(255,255,255,0.96), rgba(244,238,255,0.92));
         box-shadow: var(--shadow-lg);
         margin-bottom: 1.1rem;
     }
@@ -331,7 +337,7 @@ st.markdown(
         object-fit: contain;
         background: rgba(255,255,255,0.82);
         padding: 0.45rem;
-        box-shadow: 0 14px 28px rgba(18, 59, 93, 0.12);
+        box-shadow: 0 14px 28px rgba(111, 66, 193, 0.12);
     }
 
     .brand-logo-fallback {
@@ -356,7 +362,7 @@ st.markdown(
         font-size: 1.8rem;
         font-weight: 700;
         color: var(--brand-deep);
-        font-family: "Georgia", "Cambria", serif;
+        font-family: "Segoe UI", Arial, Helvetica, sans-serif;
     }
 
     .login-shell {
@@ -369,7 +375,7 @@ st.markdown(
     .panel-card {
         border-radius: var(--radius-xl);
         border: 1px solid var(--border);
-        background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(249,243,235,0.9));
+        background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(244,238,255,0.9));
         box-shadow: var(--shadow-lg);
         padding: 1.8rem;
     }
@@ -388,7 +394,7 @@ st.markdown(
         border-radius: 20px;
         padding: 1rem;
         border: 1px solid var(--border);
-        background: rgba(255,255,255,0.84);
+        background: rgba(255,255,255,0.88);
     }
 
     .feature-title,
@@ -422,7 +428,7 @@ st.markdown(
         font-size: 1.9rem;
         line-height: 1;
         margin-bottom: 0.35rem;
-        font-family: "Georgia", "Cambria", serif;
+        font-family: "Segoe UI", Arial, Helvetica, sans-serif;
     }
 
     .tone-progress {
@@ -434,7 +440,7 @@ st.markdown(
     }
 
     .tone-neutral {
-        background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(247,240,232,0.9));
+        background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(244,238,255,0.9));
     }
 
     .section-eyebrow {
@@ -1019,51 +1025,50 @@ elif st.session_state.current_page == "welcome":
 
     current_site = st.session_state.selected_site or "Site đã chọn"
     logo_markup = build_logo_markup("brand-logo", "CS")
-    summary_tiles = "".join(
-        [
-            build_meta_tile("Site đăng nhập", current_site, "🏢"),
-            build_meta_tile("Bộ phận đánh giá", st.session_state.selected_dept or "--", "📁"),
-            build_meta_tile("Phạm vi khảo sát", "Danh sách NCC theo site đã đăng nhập", "🎯"),
-        ]
-    )
-    st.markdown(
-        f"""
-        <div class="page-hero">
-            <div class="hero-kicker">Khởi động phiên đánh giá</div>
-            <div class="hero-grid">
-                <div>
-                    <div class="brand-lockup">
-                        {logo_markup}
-                        <div>
-                            <div class="brand-mark">Cinestar Cinemas Vietnam</div>
-                            <div class="brand-name">Khảo sát đánh giá Nhà cung cấp</div>
-                        </div>
+    left_col, right_col = st.columns([1.8, 1])
+
+    with left_col:
+        st.markdown(
+            f"""
+            <div class="page-hero">
+                <div class="hero-kicker">Khởi động phiên đánh giá</div>
+                <div class="brand-lockup">
+                    {logo_markup}
+                    <div>
+                        <div class="brand-mark">Cinestar Cinemas Vietnam</div>
+                        <div class="brand-name">Khảo sát đánh giá Nhà cung cấp</div>
                     </div>
-                    <h1 class="hero-title">Hãy để người trải nghiệm trực tiếp lên tiếng.</h1>
-                    <p class="hero-copy">
-                        Chào mừng bạn đến với hệ thống đánh giá chất lượng nhà cung cấp định kỳ.
-                        Mọi ý kiến của bạn là cơ sở để công ty nhìn nhận đúng năng lực đối tác,
-                        từ đó nâng cao chất lượng dịch vụ và tối ưu hóa vận hành tại từng site.
-                    </p>
-                    <p class="page-note">
-                        Hoàn thành khảo sát với góc nhìn thực tế, khách quan và đầy đủ nhất để kết quả phản ánh đúng chất lượng hợp tác.
-                    </p>
                 </div>
-                <div class="hero-stack">
-                    {summary_tiles}
-                    <div class="panel-card" style="padding: 1.15rem;">
-                        <div class="feature-title">Mục tiêu phiên khảo sát</div>
-                        <div class="feature-copy">
-                            Đánh giá định kỳ để cải thiện chất lượng dịch vụ, tiến độ cung ứng
-                            và mức độ phối hợp với từng nhà cung cấp.
-                        </div>
-                    </div>
+                <h1 class="hero-title">Hãy để người trải nghiệm trực tiếp lên tiếng.</h1>
+                <p class="hero-copy">
+                    Chào mừng bạn đến với hệ thống đánh giá chất lượng nhà cung cấp định kỳ.
+                    Mọi ý kiến của bạn là cơ sở để công ty nhìn nhận đúng năng lực đối tác,
+                    từ đó nâng cao chất lượng dịch vụ và tối ưu hóa vận hành tại từng site.
+                </p>
+                <p class="page-note">
+                    Hoàn thành khảo sát với góc nhìn thực tế, khách quan và đầy đủ nhất để kết quả phản ánh đúng chất lượng hợp tác.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with right_col:
+        st.markdown(build_meta_tile("Site đăng nhập", current_site, "🏢"), unsafe_allow_html=True)
+        st.markdown(build_meta_tile("Bộ phận đánh giá", st.session_state.selected_dept or "--", "📁"), unsafe_allow_html=True)
+        st.markdown(build_meta_tile("Phạm vi khảo sát", "Danh sách NCC theo site đã đăng nhập", "🎯"), unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class="panel-card" style="padding: 1.15rem;">
+                <div class="feature-title">Mục tiêu phiên khảo sát</div>
+                <div class="feature-copy">
+                    Đánh giá định kỳ để cải thiện chất lượng dịch vụ, tiến độ cung ứng
+                    và mức độ phối hợp với từng nhà cung cấp.
                 </div>
             </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+            """,
+            unsafe_allow_html=True,
+        )
 
     st.markdown(
         """
@@ -1233,14 +1238,14 @@ elif st.session_state.current_page == "evaluation":
             if current_ncc in st.session_state.edited_nccs:
                 st.caption("✏️ Đã chỉnh sửa: NCC này đã được cập nhật lại sau lần lưu đầu tiên.")
 
-            with st.form(key=f"form_{current_ncc}"):
+            with st.container(border=True):
                 # Lọc câu hỏi đúng với bộ phận mà người dùng đã chọn
                 st.markdown(
                     f"""
                     <div class="section-eyebrow">Biểu mẫu đánh giá</div>
                     <h3 class="question-stage-title">{safe_html(current_ncc)}</h3>
                     <p class="question-stage-subtitle">
-                        Hoàn tất tất cả tiêu chí bên dưới để lưu NCC này. Bạn có thể quay lại chỉnh sửa trước khi nộp cuối cùng.
+                        Hoàn tất tất cả tiêu chí bên dưới để lưu NCC này. Điểm sẽ cập nhật ngay khi bạn chọn đáp án.
                     </p>
                     """,
                     unsafe_allow_html=True,
@@ -1298,13 +1303,10 @@ elif st.session_state.current_page == "evaluation":
                                         unanswered_questions.append(f"{group_name} - {criterion}")
                                         continue
                                     score_raw = score_series.iloc[0]
-                                    # Ép về float để tránh lỗi JSON khi gửi dữ liệu
                                     score = float(score_raw)
-
-                                    # Mỗi câu trả lời tạo thành một dòng dữ liệu sẽ gửi đi sau cùng
                                     current_answers.append(
                                         {
-                                            "Thời gian": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                            "Thời gian": "",
                                             "Họ tên NV đánh giá": evaluator_name.strip(),
                                             "Bộ phận": selected_dept,
                                             "Site": selected_site,
@@ -1316,16 +1318,16 @@ elif st.session_state.current_page == "evaluation":
                                         }
                                     )
 
-                    if current_answers:
-                        total_temp_score = sum(float(answer["Điểm"]) for answer in current_answers)
-                        answered_count = len(current_answers)
-                        st.info(
-                            f"📊 Tổng điểm tạm hiện tại của NCC này: {total_temp_score:.2f} điểm | Đã chọn {answered_count} tiêu chí"
-                        )
-                    else:
-                        st.caption("📊 Tổng điểm tạm sẽ hiển thị khi bạn bắt đầu chọn các tiêu chí đánh giá.")
+                if current_answers:
+                    total_temp_score = sum(float(answer["Điểm"]) for answer in current_answers)
+                    answered_count = len(current_answers)
+                    st.info(
+                        f"📊 Tổng điểm hiện tại của NCC này: {total_temp_score:.2f} điểm | Đã chọn {answered_count} tiêu chí"
+                    )
+                else:
+                    st.caption("📊 Tổng điểm sẽ hiển thị ngay khi bạn bắt đầu chọn các tiêu chí đánh giá.")
 
-                if st.form_submit_button("Lưu & Cập nhật kết quả NCC này"):
+                if st.button("Lưu & Cập nhật kết quả NCC này", key=f"save_{current_ncc}", use_container_width=True):
                     if unanswered_questions:
                         st.error("Bạn cần chọn đầy đủ tất cả tiêu chí trước khi lưu.")
                         st.caption(
@@ -1334,9 +1336,9 @@ elif st.session_state.current_page == "evaluation":
                             + ("..." if len(unanswered_questions) > 5 else "")
                         )
                     else:
-                        # Chưa gửi lên Google ngay, chỉ lưu tạm vào session.
-                        # Nếu NCC này đã từng lưu thì dữ liệu mới sẽ ghi đè dữ liệu cũ.
-                        replace_ncc_results(current_ncc, current_answers)
+                        saved_timestamp = get_local_timestamp_string()
+                        answers_to_save = [{**answer, "Thời gian": saved_timestamp} for answer in current_answers]
+                        replace_ncc_results(current_ncc, answers_to_save)
                         st.session_state.current_ncc_selector = get_next_pending_ncc(list_ncc)
                         st.session_state.scroll_to_top = True
                         st.rerun()
@@ -1441,10 +1443,41 @@ elif st.session_state.current_page == "review_submit":
         )
 
         st.markdown("### Tổng hợp theo NCC")
-        st.dataframe(summary_df, use_container_width=True, hide_index=True)
+        st.dataframe(
+            summary_df,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Tên NCC": st.column_config.TextColumn(width="large"),
+                "Số tiêu chí": st.column_config.NumberColumn(width="small"),
+                "Tổng điểm": st.column_config.NumberColumn(format="%.2f", width="small"),
+            },
+        )
 
-        with st.expander("Xem toàn bộ dữ liệu chi tiết", expanded=True):
-            st.dataframe(review_df, use_container_width=True, hide_index=True)
+        st.markdown("### Chi tiết đánh giá")
+        detail_ncc_options = summary_df["Tên NCC"].astype(str).tolist()
+        if "review_detail_ncc" in st.session_state and st.session_state.review_detail_ncc not in detail_ncc_options:
+            del st.session_state["review_detail_ncc"]
+        detail_selected_ncc = st.selectbox(
+            "Chọn NCC để xem chi tiết",
+            detail_ncc_options,
+            key="review_detail_ncc",
+        )
+        detail_df = review_df[review_df["Tên NCC"].astype(str) == str(detail_selected_ncc)].copy()
+        detail_df = detail_df[["Thời gian", "Nhóm", "Tiêu chí", "Lựa chọn", "Điểm"]]
+        st.dataframe(
+            detail_df,
+            use_container_width=True,
+            hide_index=True,
+            height=min(460, 42 * (len(detail_df) + 1)),
+            column_config={
+                "Thời gian": st.column_config.TextColumn(width="medium"),
+                "Nhóm": st.column_config.TextColumn(width="medium"),
+                "Tiêu chí": st.column_config.TextColumn(width="large"),
+                "Lựa chọn": st.column_config.TextColumn(width="large"),
+                "Điểm": st.column_config.NumberColumn(format="%.2f", width="small"),
+            },
+        )
 
         st.markdown(
             """
