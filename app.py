@@ -1,6 +1,7 @@
 import base64
 import html
 import json
+import math
 import os
 import re
 import textwrap
@@ -774,6 +775,8 @@ if "pending_scroll_target" not in st.session_state:
     st.session_state.pending_scroll_target = ""
 if "pending_reset_after_submit" not in st.session_state:
     st.session_state.pending_reset_after_submit = False
+if "thank_you_started_at" not in st.session_state:
+    st.session_state.thank_you_started_at = 0.0
 if "evaluated_nccs" not in st.session_state:
     st.session_state.evaluated_nccs = []
 if "all_results_buffer" not in st.session_state:
@@ -1016,6 +1019,78 @@ def scroll_to_element(element_id):
         [80, 220, 420, 800].forEach((delay) => {{
             targetWindow.setTimeout(scrollToTarget, delay);
         }});
+        </script>
+        """,
+        height=0,
+    )
+
+
+def scroll_current_component_into_view():
+    # Cuộn tới đúng vị trí của component hiện tại trong parent document.
+    components.html(
+        """
+        <script>
+        const targetWindow = window.parent || window;
+        const targetDocument = targetWindow.document || document;
+        const frameElementRef = window.frameElement;
+
+        function scrollToFrame() {
+            if (!frameElementRef) {
+                return;
+            }
+
+            try {
+                frameElementRef.scrollIntoView({ behavior: "instant", block: "start", inline: "nearest" });
+            } catch (error) {}
+
+            const containers = [
+                targetDocument.querySelector('[data-testid="stAppViewContainer"]'),
+                targetDocument.querySelector('section.main'),
+                targetDocument.querySelector('[data-testid="stMain"]'),
+            ].filter(Boolean);
+
+            containers.forEach((container) => {
+                try {
+                    const frameRect = frameElementRef.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
+                    const delta = frameRect.top - containerRect.top - 12;
+                    container.scrollTop += delta;
+                } catch (error) {}
+            });
+        }
+
+        scrollToFrame();
+        [80, 220, 420, 800].forEach((delay) => {
+            targetWindow.setTimeout(scrollToFrame, delay);
+        });
+        </script>
+        """,
+        height=0,
+    )
+
+
+def schedule_page_reload_after(delay_ms, timer_key="codex-delayed-reload"):
+    # Hẹn tải lại trang sau một khoảng thời gian để thực hiện các bước chuyển màn hình tự động.
+    safe_delay = max(int(delay_ms), 0)
+    escaped_timer_key = json.dumps(timer_key)
+    components.html(
+        f"""
+        <script>
+        const targetWindow = window.parent || window;
+        if (!targetWindow.__codexDelayedReloads) {{
+            targetWindow.__codexDelayedReloads = {{}};
+        }}
+        const timerKey = {escaped_timer_key};
+        if (targetWindow.__codexDelayedReloads[timerKey]) {{
+            targetWindow.clearTimeout(targetWindow.__codexDelayedReloads[timerKey]);
+        }}
+        targetWindow.__codexDelayedReloads[timerKey] = targetWindow.setTimeout(() => {{
+            try {{
+                targetWindow.location.reload();
+            }} catch (error) {{
+                targetWindow.location.href = targetWindow.location.href;
+            }}
+        }}, {safe_delay});
         </script>
         """,
         height=0,
@@ -1547,7 +1622,9 @@ elif st.session_state.current_page == "evaluation":
             )
             st.progress(evaluated_count / total_ncc if total_ncc > 0 else 0)
             if total_ncc > 0 and evaluated_count == total_ncc:
-                st.markdown('<div id="evaluation_review_anchor"></div>', unsafe_allow_html=True)
+                if st.session_state.pending_scroll_target == "evaluation_review_anchor":
+                    scroll_current_component_into_view()
+                    st.session_state.pending_scroll_target = ""
                 st.success("Toàn bộ NCC đã được đánh giá xong. Bạn có thể chỉnh lại nếu cần, hoặc chuyển sang bước nộp kết quả.")
                 action_col1, action_col2 = st.columns(2)
                 with action_col1:
@@ -1558,9 +1635,6 @@ elif st.session_state.current_page == "evaluation":
                         st.session_state.current_page = "review_submit"
                         st.session_state.scroll_to_top = True
                         st.rerun()
-                if st.session_state.pending_scroll_target == "evaluation_review_anchor":
-                    scroll_to_element("evaluation_review_anchor")
-                    st.session_state.pending_scroll_target = ""
             else:
                 st.info(f"Còn {remaining_count} NCC cần đánh giá trước khi mở bước review cuối.")
 
@@ -1598,7 +1672,9 @@ elif st.session_state.current_page == "evaluation":
             if current_ncc in st.session_state.edited_nccs:
                 st.caption("✏️ Đã chỉnh sửa: NCC này đã được cập nhật lại sau lần lưu đầu tiên.")
 
-            st.markdown('<div id="evaluation_form_anchor"></div>', unsafe_allow_html=True)
+            if st.session_state.pending_scroll_target == "evaluation_form_anchor":
+                scroll_current_component_into_view()
+                st.session_state.pending_scroll_target = ""
             with st.container(border=True):
                 # Lọc câu hỏi đúng với bộ phận mà người dùng đã chọn
                 st.markdown(
@@ -1687,10 +1763,6 @@ elif st.session_state.current_page == "evaluation":
                     )
                 else:
                     st.caption("📊 Tổng điểm sẽ hiển thị ngay khi bạn bắt đầu chọn các tiêu chí đánh giá.")
-
-                if st.session_state.pending_scroll_target == "evaluation_form_anchor":
-                    scroll_to_element("evaluation_form_anchor")
-                    st.session_state.pending_scroll_target = ""
 
                 bind_enter_to_button("Lưu & Cập nhật kết quả NCC này", f"save-{current_ncc}")
                 if st.button("Lưu & Cập nhật kết quả NCC này", key=f"save_{current_ncc}", use_container_width=True):
@@ -1891,10 +1963,9 @@ elif st.session_state.current_page == "review_submit":
 
                     if response.status_code == 200:
                         st.balloons()
-                        st.success("✅ Dữ liệu đã được gửi thành công tới Web App.")
+                        st.session_state.thank_you_started_at = time.time()
                         st.session_state.pending_reset_after_submit = True
-                        st.session_state.current_page = "welcome"
-                        time.sleep(2)
+                        st.session_state.current_page = "thank_you"
                         st.rerun()
                     else:
                         # Google phản hồi lỗi thì hiển thị chi tiết để debug
@@ -1913,3 +1984,67 @@ elif st.session_state.current_page == "review_submit":
             # Khu debug phản hồi lần gửi gần nhất
             st.write(f"Status code lần gửi gần nhất: {st.session_state.last_api_status}")
             st.code(st.session_state.last_api_response or "(response rỗng)")
+
+
+elif st.session_state.current_page == "thank_you":
+    started_at = float(st.session_state.thank_you_started_at or time.time())
+    elapsed = max(time.time() - started_at, 0)
+    remaining_seconds = max(0, 5 - elapsed)
+
+    if remaining_seconds <= 0:
+        st.session_state.clear()
+        st.session_state.current_page = "login"
+        st.rerun()
+
+    seconds_left = max(1, math.ceil(remaining_seconds))
+    schedule_page_reload_after(int(max(remaining_seconds * 1000, 250)), "thank-you-login-redirect")
+
+    st.markdown(
+        """
+        <style>
+        [data-testid="stAppViewContainer"] {
+            overflow: hidden !important;
+        }
+        [data-testid="stMainBlockContainer"] {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+        }
+        @media (max-width: 900px) {
+            [data-testid="stAppViewContainer"] {
+                overflow: auto !important;
+            }
+            [data-testid="stMainBlockContainer"] {
+                min-height: auto;
+                display: block;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    thank_you_logo = build_logo_markup("brand-logo", "CS")
+    st.markdown(
+        f"""
+        <div class="page-hero" style="max-width: 860px; margin: 0 auto;">
+            <div class="hero-kicker">Hoàn thành phiên đánh giá</div>
+            <div class="brand-lockup">
+                {thank_you_logo}
+                <div>
+                    <div class="brand-mark">Cinestar Vendor Review</div>
+                    <div class="brand-name">Cảm ơn bạn đã hoàn tất khảo sát</div>
+                </div>
+            </div>
+            <h1 class="hero-title">Dữ liệu đã được gửi thành công.</h1>
+            <p class="hero-copy">
+                Hệ thống đã ghi nhận kết quả đánh giá nhà cung cấp của bạn.
+                Trang sẽ tự quay lại màn hình đăng nhập sau <strong>{seconds_left} giây</strong>.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
