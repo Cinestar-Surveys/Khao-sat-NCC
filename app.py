@@ -222,7 +222,8 @@ st.markdown(
         display: flex !important;
         align-items: center !important;
         box-sizing: border-box !important;
-        padding-right: 0.2rem !important;
+        gap: 0 !important;
+        padding: 0 !important;
     }
 
     .stTextInput [data-baseweb="base-input"] > *,
@@ -235,6 +236,25 @@ st.markdown(
         border: none !important;
         box-shadow: none !important;
         background: transparent !important;
+    }
+
+    .stTextInput [data-baseweb="base-input"] > div:last-child,
+    .stTextInput [data-baseweb="base-input"] > div:last-child > div {
+        background: #ffffff !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .stTextInput [data-baseweb="base-input"] > div:last-child {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        align-self: stretch !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border-top-right-radius: 16px !important;
+        border-bottom-right-radius: 16px !important;
+        overflow: hidden !important;
     }
 
     .stTextInput [data-baseweb="base-input"] > div:first-child {
@@ -282,7 +302,9 @@ st.markdown(
         flex: 0 0 auto !important;
         min-width: 3rem !important;
         min-height: 3rem !important;
-        padding: 0 0.8rem 0 0.55rem !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 0.72rem !important;
         background: #ffffff !important;
         color: var(--brand-deep) !important;
     }
