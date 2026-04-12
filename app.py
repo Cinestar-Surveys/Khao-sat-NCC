@@ -126,7 +126,7 @@ INPUT_FILE_NAMES = (
     "Câu hỏi khảo sát.xlsx",
 )
 NCC_FILTER_CONFIG_FILE_NAME = "Khai báo lọc NCC.xlsx"
-NCC_FILTER_CONFIG_REQUIRED_COLUMNS = ("Site", "Bộ phận", "Cột dữ liệu NCC")
+NCC_FILTER_CONFIG_REQUIRED_COLUMNS = ("Site", "Bộ phận", "NCC", "Lĩnh vực hoạt động")
 
 
 # =========================================================
@@ -807,10 +807,11 @@ if "last_saved_ncc" not in st.session_state:
 
 @st.cache_data
 def load_input_files(_file_signature=None):
-    # Đọc 3 file Excel đầu vào:
+    # Đọc các file Excel đầu vào:
     # - danh sách site và NCC
     # - danh sách bộ phận
     # - bộ câu hỏi khảo sát
+    # - file khai báo lọc NCC theo Site + Bộ phận
     try:
         df_sites = pd.read_excel("Danh sách site - NCC.xlsx")
         df_depts = pd.read_excel("Bộ phận đánh giá.xlsx")
@@ -855,15 +856,33 @@ def normalize_lookup_value(value):
     return " ".join(str(value).replace("\n", " ").split()).strip()
 
 
+def parse_multi_value_cell(value):
+    # Cho phép 1 ô chứa nhiều giá trị theo format:
+    # "KT","F&B"
+    # hoặc fallback dạng KT,F&B nếu dữ liệu cũ chưa có dấu nháy.
+    cell_text = normalize_lookup_value(value)
+    if not cell_text:
+        return []
+
+    quoted_values = re.findall(r'"([^"]+)"', cell_text)
+    if quoted_values:
+        return [normalize_lookup_value(item) for item in quoted_values if normalize_lookup_value(item)]
+
+    if "," in cell_text:
+        return [normalize_lookup_value(item) for item in cell_text.split(",") if normalize_lookup_value(item)]
+
+    return [cell_text]
+
+
 def load_optional_ncc_filter_rules():
     # File này dùng để khai báo những tổ hợp Site + Bộ phận
-    # nào cần thêm bộ lọc NCC ở bước đăng nhập.
+    # nào cần thêm bước chọn Lĩnh vực hoạt động ở bước đăng nhập.
     if not os.path.exists(NCC_FILTER_CONFIG_FILE_NAME):
         return pd.DataFrame()
 
     df_rules = pd.read_excel(NCC_FILTER_CONFIG_FILE_NAME)
     df_rules.columns = df_rules.columns.str.strip().str.replace("\n", "", regex=False)
-    for column in ["Site", "Bộ phận", "Cột dữ liệu NCC", "Nhãn hiển thị", "Bắt buộc"]:
+    for column in NCC_FILTER_CONFIG_REQUIRED_COLUMNS:
         if column in df_rules.columns:
             df_rules[column] = df_rules[column].apply(normalize_lookup_value)
     return df_rules
@@ -879,39 +898,47 @@ def sanitize_session_key_part(value):
     return safe_value.strip("_").lower() or "rule"
 
 
-def parse_rule_required_value(value):
-    normalized_value = normalize_lookup_value(value).casefold()
-    return normalized_value not in {"0", "false", "no", "optional", "không", "khong", "tùy chọn", "tuy chon"}
-
-
-def get_ncc_filter_rule_rows(df_rules, site_name, dept_name):
+def get_ncc_filter_scope_rows(df_rules, site_name, dept_name):
     if df_rules.empty:
-        return []
+        return pd.DataFrame()
     if any(column not in df_rules.columns for column in NCC_FILTER_CONFIG_REQUIRED_COLUMNS):
-        return []
+        return pd.DataFrame()
 
     normalized_site = normalize_lookup_value(site_name).casefold()
     normalized_dept = normalize_department_label(dept_name).casefold()
-    rule_rows = []
+    scope_rows = df_rules[
+        df_rules["Site"].apply(lambda value: normalize_lookup_value(value).casefold() == normalized_site)
+        & df_rules["Bộ phận"].apply(lambda value: normalize_department_label(value).casefold() == normalized_dept)
+    ].copy()
 
-    for index, row in df_rules.iterrows():
-        row_site = normalize_lookup_value(row.get("Site", "")).casefold()
-        row_dept = normalize_department_label(row.get("Bộ phận", "")).casefold()
-        column_name = normalize_lookup_value(row.get("Cột dữ liệu NCC", ""))
-        if row_site != normalized_site or row_dept != normalized_dept or not column_name:
-            continue
+    if "NCC" in scope_rows.columns:
+        scope_rows = scope_rows[scope_rows["NCC"].apply(lambda value: bool(normalize_lookup_value(value)))]
 
-        label = normalize_lookup_value(row.get("Nhãn hiển thị", "")) or column_name
-        rule_rows.append(
-            {
-                "rule_id": f"{sanitize_session_key_part(site_name)}_{sanitize_session_key_part(dept_name)}_{sanitize_session_key_part(column_name)}_{index}",
-                "column": column_name,
-                "label": label,
-                "required": parse_rule_required_value(row.get("Bắt buộc", "Có")),
-            }
-        )
+    return scope_rows
 
-    return rule_rows
+
+def get_ncc_filter_rule_rows(df_rules, site_name, dept_name):
+    scope_rows = get_ncc_filter_scope_rows(df_rules, site_name, dept_name)
+    if scope_rows.empty:
+        return []
+
+    activity_values = []
+    for value in scope_rows["Lĩnh vực hoạt động"].tolist():
+        activity_values.extend(parse_multi_value_cell(value))
+
+    activity_values = list(dict.fromkeys(item for item in activity_values if normalize_lookup_value(item)))
+    if not activity_values:
+        return []
+
+    return [
+        {
+            "rule_id": f"{sanitize_session_key_part(site_name)}_{sanitize_session_key_part(dept_name)}_linh_vuc_hoat_dong",
+            "column": "Lĩnh vực hoạt động",
+            "label": "Chọn Lĩnh vực hoạt động",
+            "required": True,
+            "allowed_values": activity_values,
+        }
+    ]
 
 
 def get_ncc_filter_rule_widget_key(rule):
@@ -925,49 +952,18 @@ def build_ncc_filter_placeholder(label):
     return f"-- Chọn {normalized_label} --"
 
 
-def filter_sites_df_by_scope(df_sites, site_name, selected_filters=None):
-    if df_sites.empty or "Site" not in df_sites.columns:
-        return pd.DataFrame()
-
-    selected_filters = selected_filters or {}
-    normalized_site = normalize_lookup_value(site_name).casefold()
-    filtered_df = df_sites[
-        df_sites["Site"].apply(lambda value: normalize_lookup_value(value).casefold() == normalized_site)
-    ].copy()
-
-    for column_name, selected_value in selected_filters.items():
-        normalized_value = normalize_lookup_value(selected_value)
-        if not normalized_value or column_name not in filtered_df.columns:
-            continue
-
-        filtered_df = filtered_df[
-            filtered_df[column_name].apply(
-                lambda value: normalize_lookup_value(value).casefold() == normalized_value.casefold()
-            )
-        ]
-
-    return filtered_df
-
-
-def get_rule_option_values(df_sites, site_name, active_rules, current_rule):
-    previous_filters = {}
-    for rule in active_rules:
-        if rule["rule_id"] == current_rule["rule_id"]:
-            break
-        widget_value = normalize_lookup_value(st.session_state.get(get_ncc_filter_rule_widget_key(rule), ""))
-        if widget_value and widget_value != build_ncc_filter_placeholder(rule["label"]):
-            previous_filters[rule["column"]] = widget_value
-
-    filtered_df = filter_sites_df_by_scope(df_sites, site_name, previous_filters)
-    if current_rule["column"] not in filtered_df.columns:
+def get_rule_option_values(df_rules, site_name, dept_name, current_rule):
+    scope_rows = get_ncc_filter_scope_rows(df_rules, site_name, dept_name)
+    if scope_rows.empty:
         return []
 
     options = []
-    for value in filtered_df[current_rule["column"]].tolist():
-        normalized_value = normalize_lookup_value(value)
-        if normalized_value:
-            options.append(normalized_value)
-    return list(dict.fromkeys(options))
+    for value in scope_rows[current_rule["column"]].tolist():
+        options.extend(parse_multi_value_cell(value))
+
+    options = list(dict.fromkeys(item for item in options if normalize_lookup_value(item)))
+    allowed_values = current_rule.get("allowed_values", [])
+    return allowed_values if allowed_values else options
 
 
 def collect_selected_ncc_filters(active_rules):
@@ -982,17 +978,56 @@ def collect_selected_ncc_filters(active_rules):
     return selected_filters, selected_filter_display
 
 
-def get_filtered_ncc_list(df_sites, site_name, selected_filters=None):
-    filtered_df = filter_sites_df_by_scope(df_sites, site_name, selected_filters)
-    if filtered_df.empty or "NCC" not in filtered_df.columns:
+def get_filtered_ncc_list(df_sites, site_name, dept_name, df_filter_rules=None, selected_filters=None):
+    if df_sites.empty or "Site" not in df_sites.columns or "NCC" not in df_sites.columns:
         return []
 
-    ncc_values = []
-    for value in filtered_df["NCC"].tolist():
+    selected_filters = selected_filters or {}
+    normalized_site = normalize_lookup_value(site_name).casefold()
+    base_site_df = df_sites[
+        df_sites["Site"].apply(lambda value: normalize_lookup_value(value).casefold() == normalized_site)
+    ].copy()
+    if base_site_df.empty:
+        return []
+
+    base_ncc_values = []
+    for value in base_site_df["NCC"].tolist():
         normalized_value = normalize_lookup_value(value)
         if normalized_value:
-            ncc_values.append(normalized_value)
-    return list(dict.fromkeys(ncc_values))
+            base_ncc_values.append(normalized_value)
+    base_ncc_values = list(dict.fromkeys(base_ncc_values))
+
+    if isinstance(df_filter_rules, pd.DataFrame):
+        rules_df = df_filter_rules
+    else:
+        rules_df = pd.DataFrame()
+
+    scope_rows = get_ncc_filter_scope_rows(rules_df, site_name, dept_name)
+    if scope_rows.empty:
+        return base_ncc_values
+
+    selected_activity = normalize_lookup_value(selected_filters.get("Lĩnh vực hoạt động", ""))
+    if selected_activity:
+        scope_rows = scope_rows[
+            scope_rows["Lĩnh vực hoạt động"].apply(
+                lambda value: any(
+                    item.casefold() == selected_activity.casefold() for item in parse_multi_value_cell(value)
+                )
+            )
+        ]
+
+    scoped_ncc_values = []
+    for value in scope_rows["NCC"].tolist():
+        normalized_value = normalize_lookup_value(value)
+        if normalized_value:
+            scoped_ncc_values.append(normalized_value)
+    scoped_ncc_values = list(dict.fromkeys(scoped_ncc_values))
+
+    if not scoped_ncc_values and selected_activity:
+        return []
+
+    scoped_ncc_set = set(scoped_ncc_values)
+    return [ncc for ncc in base_ncc_values if ncc in scoped_ncc_set]
 
 
 def format_selected_ncc_filter_scope(selected_filter_display):
@@ -1021,22 +1056,9 @@ def get_department_options(df_depts):
 def parse_departments_from_question_cell(value):
     # Trong file câu hỏi, một ô có thể chứa nhiều bộ phận,
     # mỗi bộ phận nằm trong dấu "" và cách nhau bằng dấu phẩy.
-    cell_text = str(value or "").replace("\n", " ").strip()
-    if not cell_text:
-        return []
-
-    quoted_departments = re.findall(r'"([^"]+)"', cell_text)
-    if quoted_departments:
-        return [
-            normalize_department_label(item)
-            for item in quoted_departments
-            if normalize_department_label(item)
-        ]
-
-    # Fallback cho các dòng không có dấu " nhưng vẫn chứa dữ liệu cũ.
     return [
         normalize_department_label(item)
-        for item in cell_text.split(",")
+        for item in parse_multi_value_cell(value)
         if normalize_department_label(item)
     ]
 
@@ -1518,18 +1540,9 @@ if st.session_state.current_page == "login":
                     + ". App sẽ tạm bỏ qua file này cho tới khi bạn bổ sung đủ cột."
                 )
             elif active_login_filter_rules:
-                st.caption("Tổ hợp Site và Bộ phận này cần chọn thêm phạm vi NCC trước khi đăng nhập.")
+                st.caption("Tổ hợp Site và Bộ phận này cần chọn thêm Lĩnh vực hoạt động trước khi đăng nhập.")
                 for rule in active_login_filter_rules:
-                    if rule["column"] not in df_sites_login.columns:
-                        error_message = (
-                            f"File Danh sách site - NCC.xlsx đang thiếu cột '{rule['column']}' "
-                            "theo khai báo bộ lọc NCC."
-                        )
-                        login_filter_errors.append(error_message)
-                        st.error(error_message)
-                        continue
-
-                    option_values = get_rule_option_values(df_sites_login, login_site, active_login_filter_rules, rule)
+                    option_values = get_rule_option_values(df_ncc_filter_rules, login_site, login_dept, rule)
                     placeholder = build_ncc_filter_placeholder(rule["label"])
                     widget_key = get_ncc_filter_rule_widget_key(rule)
                     available_options = [placeholder] + option_values
@@ -1544,8 +1557,8 @@ if st.session_state.current_page == "login":
 
                     if not option_values:
                         empty_scope_message = (
-                            f"Chưa có dữ liệu '{rule['label']}' cho tổ hợp {login_site} - {login_dept} "
-                            "trong file Danh sách site - NCC.xlsx."
+                            f"Chưa có dữ liệu lọc NCC cho tổ hợp {login_site} - {login_dept} "
+                            f"trong file {NCC_FILTER_CONFIG_FILE_NAME}."
                         )
                         login_filter_errors.append(empty_scope_message)
                         st.warning(empty_scope_message)
@@ -1588,7 +1601,7 @@ if st.session_state.current_page == "login":
                 <p class="page-note">
                     Mật khẩu đang được kiểm tra theo từng site. Sau khi đăng nhập thành công,
                     bạn chỉ cần nhập tên nhân viên và bắt đầu đánh giá.
-                    {"Một số tổ hợp Site + Bộ phận sẽ cần chọn thêm phạm vi NCC ngay tại bước này." if active_login_filter_rules else ""}
+                    {"Một số tổ hợp Site + Bộ phận sẽ cần chọn thêm Lĩnh vực hoạt động ngay tại bước này." if active_login_filter_rules else ""}
                 </p>
                 """,
                 unsafe_allow_html=True,
@@ -1810,7 +1823,7 @@ elif st.session_state.current_page == "evaluation":
         st.warning("Chưa cấu hình WEB_APP_URL trong Streamlit secrets nên chưa thể gửi dữ liệu lên Google Sheet.")
 
     file_signature = get_input_file_signature()
-    df_sites, _, df_questions, _ = load_input_files(file_signature)
+    df_sites, _, df_questions, df_ncc_filter_rules = load_input_files(file_signature)
 
     with st.container(border=True):
         st.markdown(
@@ -1840,7 +1853,13 @@ elif st.session_state.current_page == "evaluation":
 
     if selected_site and selected_dept != "-- Chọn Bộ phận --" and evaluator_name.strip():
         # Lấy danh sách NCC của site đang chọn
-        list_ncc = get_filtered_ncc_list(df_sites, selected_site, selected_ncc_filters)
+        list_ncc = get_filtered_ncc_list(
+            df_sites,
+            selected_site,
+            selected_dept,
+            df_ncc_filter_rules,
+            selected_ncc_filters,
+        )
         total_ncc = len(list_ncc)
         evaluated_nccs_for_site = [ncc for ncc in list_ncc if ncc in set(st.session_state.evaluated_nccs)]
         evaluated_count = len(evaluated_nccs_for_site)
@@ -2095,10 +2114,17 @@ elif st.session_state.current_page == "review_submit":
         st.warning("Chưa cấu hình WEB_APP_URL trong Streamlit secrets nên chưa thể gửi dữ liệu lên Google Sheet.")
 
     file_signature = get_input_file_signature()
-    df_sites, _, _, _ = load_input_files(file_signature)
+    df_sites, _, _, df_ncc_filter_rules = load_input_files(file_signature)
     selected_site = st.session_state.selected_site
+    selected_dept = st.session_state.selected_dept
     selected_ncc_filters = st.session_state.selected_ncc_filters or {}
-    list_ncc = get_filtered_ncc_list(df_sites, selected_site, selected_ncc_filters)
+    list_ncc = get_filtered_ncc_list(
+        df_sites,
+        selected_site,
+        selected_dept,
+        df_ncc_filter_rules,
+        selected_ncc_filters,
+    )
     total_ncc = len(list_ncc)
     evaluated_nccs_for_site = [ncc for ncc in list_ncc if ncc in set(st.session_state.evaluated_nccs)]
     evaluated_count = len(evaluated_nccs_for_site)
