@@ -1482,13 +1482,7 @@ elif st.session_state.current_page == "evaluation":
         unsafe_allow_html=True,
     )
 
-    if st.session_state.pending_scroll_target == "evaluation_form_anchor":
-        scroll_to_element("evaluation_form_anchor")
-        st.session_state.pending_scroll_target = ""
-    elif st.session_state.pending_scroll_target == "evaluation_review_anchor":
-        scroll_to_element("evaluation_review_anchor")
-        st.session_state.pending_scroll_target = ""
-    elif st.session_state.scroll_to_top:
+    if st.session_state.scroll_to_top:
         scroll_page_to_top()
         st.session_state.scroll_to_top = False
 
@@ -1581,6 +1575,9 @@ elif st.session_state.current_page == "evaluation":
                         st.session_state.current_page = "review_submit"
                         st.session_state.scroll_to_top = True
                         st.rerun()
+                if st.session_state.pending_scroll_target == "evaluation_review_anchor":
+                    scroll_to_element("evaluation_review_anchor")
+                    st.session_state.pending_scroll_target = ""
             else:
                 st.info(f"Còn {remaining_count} NCC cần đánh giá trước khi mở bước review cuối.")
 
@@ -1707,6 +1704,10 @@ elif st.session_state.current_page == "evaluation":
                     )
                 else:
                     st.caption("📊 Tổng điểm sẽ hiển thị ngay khi bạn bắt đầu chọn các tiêu chí đánh giá.")
+
+                if st.session_state.pending_scroll_target == "evaluation_form_anchor":
+                    scroll_to_element("evaluation_form_anchor")
+                    st.session_state.pending_scroll_target = ""
 
                 bind_enter_to_button("Lưu & Cập nhật kết quả NCC này", f"save-{current_ncc}")
                 if st.button("Lưu & Cập nhật kết quả NCC này", key=f"save_{current_ncc}", use_container_width=True):
