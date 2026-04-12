@@ -225,6 +225,11 @@ st.markdown(
         padding-right: 0.2rem !important;
     }
 
+    .stTextInput [data-baseweb="base-input"] > *,
+    .stSelectbox [data-baseweb="select"] > * {
+        background: #ffffff !important;
+    }
+
     .stTextInput [data-baseweb="base-input"] > div,
     .stTextInput [data-baseweb="base-input"] [data-baseweb="input"] {
         border: none !important;
@@ -236,10 +241,16 @@ st.markdown(
         flex: 1 1 auto !important;
         min-width: 0 !important;
         width: 1% !important;
+        display: flex !important;
+        align-items: center !important;
+        min-height: 3.2rem !important;
     }
 
     .stTextInput [data-baseweb="base-input"] [data-baseweb="input"] {
         width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        min-height: 3.2rem !important;
     }
 
     .stTextInput input {
@@ -247,8 +258,12 @@ st.markdown(
         color: var(--ink) !important;
         background: transparent !important;
         width: 100% !important;
-        padding: 0.72rem 0.9rem !important;
+        min-height: 3.2rem !important;
+        height: 3.2rem !important;
+        line-height: 3.2rem !important;
+        padding: 0 0.9rem !important;
         box-sizing: border-box !important;
+        align-self: center !important;
     }
 
     .stTextInput [data-baseweb="base-input"] button,
@@ -266,8 +281,22 @@ st.markdown(
     .stTextInput [data-baseweb="base-input"] button {
         flex: 0 0 auto !important;
         min-width: 3rem !important;
+        min-height: 3rem !important;
         padding: 0 0.8rem 0 0.55rem !important;
+        background: #ffffff !important;
         color: var(--brand-deep) !important;
+    }
+
+    .stSelectbox [data-baseweb="select"] > div,
+    .stSelectbox [data-baseweb="select"] [role="combobox"] {
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .stSelectbox [data-baseweb="select"] [role="combobox"] {
+        min-height: 3.2rem !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
     }
 
     .stSelectbox [data-baseweb="select"] svg {
