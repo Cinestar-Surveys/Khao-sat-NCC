@@ -246,15 +246,7 @@ st.markdown(
     }
 
     .stTextInput [data-baseweb="base-input"] > div:last-child {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        align-self: stretch !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        border-top-right-radius: 16px !important;
-        border-bottom-right-radius: 16px !important;
-        overflow: hidden !important;
+        display: none !important;
     }
 
     .stTextInput [data-baseweb="base-input"] > div:first-child {
@@ -278,12 +270,13 @@ st.markdown(
         color: var(--ink) !important;
         background: transparent !important;
         width: 100% !important;
-        min-height: 3.2rem !important;
-        height: 3.2rem !important;
-        line-height: 3.2rem !important;
-        padding: 0 0.9rem !important;
+        min-height: 0 !important;
+        height: auto !important;
+        line-height: 1.25 !important;
+        padding: 0.82rem 0.9rem !important;
         box-sizing: border-box !important;
         align-self: center !important;
+        margin: 0 !important;
     }
 
     .stTextInput [data-baseweb="base-input"] button,
@@ -299,14 +292,7 @@ st.markdown(
     }
 
     .stTextInput [data-baseweb="base-input"] button {
-        flex: 0 0 auto !important;
-        min-width: 3rem !important;
-        min-height: 3rem !important;
-        height: 100% !important;
-        margin: 0 !important;
-        padding: 0 0.72rem !important;
-        background: #ffffff !important;
-        color: var(--brand-deep) !important;
+        display: none !important;
     }
 
     .stSelectbox [data-baseweb="select"] > div,
