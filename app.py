@@ -993,44 +993,27 @@ def scroll_to_element(element_id):
         const targetWindow = window.parent || window;
         const targetDocument = targetWindow.document || document;
         const elementId = {escaped_element_id};
+        const frameElementRef = window.frameElement;
 
         function scrollToTarget() {{
-            const targetElement = targetDocument.getElementById(elementId);
-            if (!targetElement) {{
+            const anchorElement = targetDocument.getElementById(elementId);
+            const scrollTarget = anchorElement || frameElementRef;
+            if (!scrollTarget) {{
                 return;
             }}
 
             try {{
-                targetElement.scrollIntoView({{ behavior: "instant", block: "start" }});
+                scrollTarget.scrollIntoView({{ behavior: "instant", block: "start", inline: "nearest" }});
             }} catch (error) {{}}
 
-            const offsetTop = targetElement.getBoundingClientRect().top + (targetWindow.scrollY || 0);
-            const desiredTop = Math.max(offsetTop - 12, 0);
-            const scrollTargets = [
-                targetWindow,
-                targetDocument.documentElement,
-                targetDocument.body,
-                targetDocument.scrollingElement,
-                targetDocument.querySelector('[data-testid="stAppViewContainer"]'),
-                targetDocument.querySelector('section.main'),
-                targetDocument.querySelector('[data-testid="stMain"]'),
-            ].filter(Boolean);
-
-            scrollTargets.forEach((target) => {{
-                try {{
-                    if (typeof target.scrollTo === "function") {{
-                        target.scrollTo({{ top: desiredTop, left: 0, behavior: "instant" }});
-                    }}
-                }} catch (error) {{}}
-                try {{
-                    target.scrollTop = desiredTop;
-                    target.scrollLeft = 0;
-                }} catch (error) {{}}
-            }});
+            try {{
+                targetWindow.location.hash = "";
+                targetWindow.location.hash = elementId;
+            }} catch (error) {{}}
         }}
 
         scrollToTarget();
-        [60, 180, 360, 720].forEach((delay) => {{
+        [80, 220, 420, 800].forEach((delay) => {{
             targetWindow.setTimeout(scrollToTarget, delay);
         }});
         </script>
