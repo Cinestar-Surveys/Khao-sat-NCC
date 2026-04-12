@@ -1250,15 +1250,22 @@ elif st.session_state.current_page == "welcome":
         }
         .welcome-side-stack .meta-tile,
         .welcome-side-stack .panel-card {
-            padding: 1rem 1.1rem;
+            padding: 0.95rem 1.05rem;
         }
         .welcome-side-stack .feature-copy,
         .welcome-side-stack .meta-value {
-            line-height: 1.5;
+            line-height: 1.45;
+        }
+        .welcome-side-stack {
+            gap: 0.85rem;
+        }
+        .welcome-cta-card {
+            margin-top: 1rem;
+            padding: 1.05rem 1.2rem;
         }
         .welcome-cta-card .section-heading {
             margin-bottom: 0.35rem;
-            font-size: 1.62rem;
+            font-size: 1.46rem;
         }
         @media (max-width: 980px) {
             [data-testid="stAppViewContainer"] {
@@ -1275,6 +1282,9 @@ elif st.session_state.current_page == "welcome":
             }
             .page-hero .hero-title {
                 font-size: clamp(1.75rem, 6.4vw, 2.4rem);
+            }
+            .welcome-side-stack {
+                gap: 1rem;
             }
         }
         </style>
@@ -1311,6 +1321,22 @@ elif st.session_state.current_page == "welcome":
             """,
             unsafe_allow_html=True,
         )
+        st.markdown(
+            """
+            <div class="surface-card welcome-cta-card">
+                <div class="section-eyebrow">Sẵn sàng bắt đầu?</div>
+                <h3 class="section-heading">Chuyển sang khu vực đánh giá chi tiết</h3>
+                <p class="welcome-action-note">
+                    Ở bước tiếp theo, bạn sẽ chọn từng NCC trong site hiện tại,
+                    hoàn tất đánh giá theo đúng bộ phận và lưu kết quả trước khi review lần cuối.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("🚀 BẮT ĐẦU ĐÁNH GIÁ NGAY", use_container_width=True):
+            st.session_state.current_page = "evaluation"
+            st.rerun()
 
     with right_col:
         welcome_side_markup = "".join(
@@ -1332,22 +1358,6 @@ elif st.session_state.current_page == "welcome":
             ]
         )
         st.markdown(f'<div class="welcome-side-stack">{welcome_side_markup}</div>', unsafe_allow_html=True)
-        st.markdown(
-            """
-            <div class="surface-card welcome-cta-card">
-                <div class="section-eyebrow">Sẵn sàng bắt đầu?</div>
-                <h3 class="section-heading">Chuyển sang khu vực đánh giá chi tiết</h3>
-                <p class="welcome-action-note">
-                    Ở bước tiếp theo, bạn sẽ chọn từng NCC trong site hiện tại,
-                    hoàn tất đánh giá theo đúng bộ phận và lưu kết quả trước khi review lần cuối.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        if st.button("🚀 BẮT ĐẦU ĐÁNH GIÁ NGAY", use_container_width=True):
-            st.session_state.current_page = "evaluation"
-            st.rerun()
 
 
 # =====================================================================
