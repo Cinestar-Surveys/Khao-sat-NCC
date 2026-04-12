@@ -827,6 +827,10 @@ def load_input_files(_file_signature=None):
             if column in df_qs.columns:
                 df_qs[column] = df_qs[column].ffill()
 
+        for column in ["Nhóm", "Tiêu chí"]:
+            if column in df_qs.columns:
+                df_qs[column] = df_qs[column].apply(clean_excel_markdown_artifacts)
+
         return df_sites, df_depts, df_qs, df_ncc_filter_rules
     except Exception as exc:
         st.error(f"❌ Không tìm thấy hoặc không đọc được file Excel đầu vào: {exc}")
@@ -854,6 +858,22 @@ def normalize_lookup_value(value):
     except Exception:
         pass
     return " ".join(str(value).replace("\n", " ").split()).strip()
+
+
+def clean_excel_markdown_artifacts(value):
+    # Một số ô Excel có thể bị dính markdown như **...** hoặc `...`.
+    # Làm sạch sớm để tránh hiện ký tự thô trên form đánh giá.
+    text = normalize_lookup_value(value)
+    if not text:
+        return ""
+
+    previous_text = None
+    while previous_text != text:
+        previous_text = text
+        text = re.sub(r"^\s*[*_`#]+\s*", "", text)
+        text = re.sub(r"\s*[*_`#]+\s*$", "", text)
+
+    return text.strip()
 
 
 def parse_multi_value_cell(value):
