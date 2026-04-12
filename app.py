@@ -125,12 +125,7 @@ INPUT_FILE_NAMES = (
     "Bộ phận đánh giá.xlsx",
     "Câu hỏi khảo sát.xlsx",
 )
-NCC_FILTER_CONFIG_FILE_NAMES = (
-    "Khai báo lọc NCC.xlsx",
-    "Khai báo lọc NCC.csv",
-    "khai_bao_loc_ncc.xlsx",
-    "khai_bao_loc_ncc.csv",
-)
+NCC_FILTER_CONFIG_FILE_NAME = "Khai báo lọc NCC.xlsx"
 NCC_FILTER_CONFIG_REQUIRED_COLUMNS = ("Site", "Bộ phận", "Cột dữ liệu NCC")
 
 
@@ -839,7 +834,7 @@ def load_input_files(_file_signature=None):
 
 def get_input_file_signature():
     signatures = []
-    for file_name in INPUT_FILE_NAMES + NCC_FILTER_CONFIG_FILE_NAMES:
+    for file_name in INPUT_FILE_NAMES + (NCC_FILTER_CONFIG_FILE_NAME,):
         if os.path.exists(file_name):
             stat = os.stat(file_name)
             signatures.append((file_name, stat.st_mtime_ns, stat.st_size))
@@ -863,30 +858,15 @@ def normalize_lookup_value(value):
 def load_optional_ncc_filter_rules():
     # File này dùng để khai báo những tổ hợp Site + Bộ phận
     # nào cần thêm bộ lọc NCC ở bước đăng nhập.
-    for file_name in NCC_FILTER_CONFIG_FILE_NAMES:
-        if not os.path.exists(file_name):
-            continue
+    if not os.path.exists(NCC_FILTER_CONFIG_FILE_NAME):
+        return pd.DataFrame()
 
-        if file_name.lower().endswith(".csv"):
-            df_rules = None
-            for encoding in ("utf-8-sig", "utf-8", "cp1258", "utf-16", "cp1252"):
-                try:
-                    df_rules = pd.read_csv(file_name, encoding=encoding)
-                    break
-                except UnicodeDecodeError:
-                    continue
-            if df_rules is None:
-                raise ValueError(f"Không đọc được file cấu hình NCC dạng CSV: {file_name}")
-        else:
-            df_rules = pd.read_excel(file_name)
-
-        df_rules.columns = df_rules.columns.str.strip().str.replace("\n", "", regex=False)
-        for column in ["Site", "Bộ phận", "Cột dữ liệu NCC", "Nhãn hiển thị", "Bắt buộc"]:
-            if column in df_rules.columns:
-                df_rules[column] = df_rules[column].apply(normalize_lookup_value)
-        return df_rules
-
-    return pd.DataFrame()
+    df_rules = pd.read_excel(NCC_FILTER_CONFIG_FILE_NAME)
+    df_rules.columns = df_rules.columns.str.strip().str.replace("\n", "", regex=False)
+    for column in ["Site", "Bộ phận", "Cột dữ liệu NCC", "Nhãn hiển thị", "Bắt buộc"]:
+        if column in df_rules.columns:
+            df_rules[column] = df_rules[column].apply(normalize_lookup_value)
+    return df_rules
 
 
 def normalize_department_label(value):
