@@ -246,7 +246,16 @@ st.markdown(
     }
 
     .stTextInput [data-baseweb="base-input"] > div:last-child {
-        display: none !important;
+        display: flex !important;
+        align-items: stretch !important;
+        justify-content: center !important;
+        flex: 0 0 auto !important;
+        min-height: 3.2rem !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border-top-right-radius: 16px !important;
+        border-bottom-right-radius: 16px !important;
+        overflow: hidden !important;
     }
 
     .stTextInput [data-baseweb="base-input"] > div:first-child {
@@ -292,7 +301,25 @@ st.markdown(
     }
 
     .stTextInput [data-baseweb="base-input"] button {
-        display: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex: 0 0 auto !important;
+        min-width: 3rem !important;
+        min-height: 3.2rem !important;
+        height: 3.2rem !important;
+        margin: 0 !important;
+        padding: 0 0.78rem !important;
+        background: #ffffff !important;
+        color: var(--brand-deep) !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .stTextInput [data-baseweb="base-input"] button svg,
+    .stTextInput [data-baseweb="base-input"] button path {
+        fill: var(--brand-deep) !important;
+        color: var(--brand-deep) !important;
     }
 
     .stSelectbox [data-baseweb="select"] > div,
@@ -1225,47 +1252,58 @@ elif st.session_state.current_page == "welcome":
         }
         .page-hero {
             margin-bottom: 0;
-            padding: 1.35rem 1.5rem;
+            padding: 1.28rem 1.42rem;
         }
         .page-hero .hero-title {
-            font-size: clamp(1.7rem, 3vw, 2.95rem);
+            font-size: clamp(1.65rem, 2.85vw, 2.8rem);
             line-height: 1.08;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.42rem;
         }
         .page-hero .hero-copy {
-            font-size: 0.95rem;
-            line-height: 1.65;
+            font-size: 0.93rem;
+            line-height: 1.58;
         }
         .page-hero .page-note {
-            margin-top: 0.45rem;
-            line-height: 1.6;
+            margin-top: 0.38rem;
+            line-height: 1.52;
         }
         .page-hero .brand-logo {
-            width: 68px;
-            max-width: 68px;
+            width: 64px;
+            max-width: 64px;
             border-radius: 18px;
         }
         .page-hero .brand-name {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
         }
         .welcome-side-stack .meta-tile,
         .welcome-side-stack .panel-card {
-            padding: 0.95rem 1.05rem;
+            padding: 0.9rem 1rem;
         }
         .welcome-side-stack .feature-copy,
         .welcome-side-stack .meta-value {
-            line-height: 1.45;
+            font-size: 0.92rem;
+            line-height: 1.38;
         }
         .welcome-side-stack {
-            gap: 0.85rem;
+            gap: 0.72rem;
         }
         .welcome-cta-card {
-            margin-top: 1rem;
-            padding: 1.05rem 1.2rem;
+            margin-top: 0;
+            padding: 1rem 1.05rem;
         }
         .welcome-cta-card .section-heading {
-            margin-bottom: 0.35rem;
-            font-size: 1.46rem;
+            margin-bottom: 0.25rem;
+            font-size: 1.28rem;
+        }
+        .welcome-cta-card .welcome-action-note {
+            margin-bottom: 0.55rem;
+            font-size: 0.92rem;
+            line-height: 1.48;
+        }
+        .welcome-side-stack .meta-label,
+        .welcome-side-stack .feature-title {
+            margin-bottom: 0.24rem;
+            font-size: 0.78rem;
         }
         @media (max-width: 980px) {
             [data-testid="stAppViewContainer"] {
@@ -1321,22 +1359,6 @@ elif st.session_state.current_page == "welcome":
             """,
             unsafe_allow_html=True,
         )
-        st.markdown(
-            """
-            <div class="surface-card welcome-cta-card">
-                <div class="section-eyebrow">Sẵn sàng bắt đầu?</div>
-                <h3 class="section-heading">Chuyển sang khu vực đánh giá chi tiết</h3>
-                <p class="welcome-action-note">
-                    Ở bước tiếp theo, bạn sẽ chọn từng NCC trong site hiện tại,
-                    hoàn tất đánh giá theo đúng bộ phận và lưu kết quả trước khi review lần cuối.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        if st.button("🚀 BẮT ĐẦU ĐÁNH GIÁ NGAY", use_container_width=True):
-            st.session_state.current_page = "evaluation"
-            st.rerun()
 
     with right_col:
         welcome_side_markup = "".join(
@@ -1346,7 +1368,13 @@ elif st.session_state.current_page == "welcome":
                 build_meta_tile("Phạm vi khảo sát", "Danh sách NCC theo site đã đăng nhập", "🎯"),
                 textwrap.dedent(
                     """
-                    <div class="panel-card">
+                    <div class="panel-card welcome-cta-card">
+                        <div class="section-eyebrow">Sẵn sàng bắt đầu?</div>
+                        <h3 class="section-heading">Chuyển sang khu vực đánh giá chi tiết</h3>
+                        <p class="welcome-action-note">
+                            Ở bước tiếp theo, bạn sẽ chọn từng NCC trong site hiện tại,
+                            hoàn tất đánh giá theo đúng bộ phận và lưu kết quả trước khi review lần cuối.
+                        </p>
                         <div class="feature-title">Mục tiêu phiên khảo sát</div>
                         <div class="feature-copy">
                             Đánh giá định kỳ để cải thiện chất lượng dịch vụ, tiến độ cung ứng
@@ -1358,6 +1386,9 @@ elif st.session_state.current_page == "welcome":
             ]
         )
         st.markdown(f'<div class="welcome-side-stack">{welcome_side_markup}</div>', unsafe_allow_html=True)
+        if st.button("🚀 BẮT ĐẦU ĐÁNH GIÁ NGAY", use_container_width=True):
+            st.session_state.current_page = "evaluation"
+            st.rerun()
 
 
 # =====================================================================
