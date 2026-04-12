@@ -206,6 +206,7 @@ st.markdown(
         box-shadow: 0 18px 30px rgba(111, 66, 193, 0.24);
     }
 
+    .stTextInput [data-baseweb="base-input"],
     .stTextInput [data-baseweb="input"] > div,
     .stSelectbox [data-baseweb="select"] > div {
         border-radius: 16px !important;
@@ -213,6 +214,14 @@ st.markdown(
         background: #ffffff !important;
         min-height: 3.2rem !important;
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.75) !important;
+        overflow: hidden !important;
+    }
+
+    .stTextInput [data-baseweb="base-input"] > div,
+    .stTextInput [data-baseweb="base-input"] [data-baseweb="input"] {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
     }
 
     .stTextInput input {
@@ -221,6 +230,9 @@ st.markdown(
         background: transparent !important;
     }
 
+    .stTextInput [data-baseweb="base-input"] button,
+    .stTextInput [data-baseweb="base-input"] button:hover,
+    .stTextInput [data-baseweb="base-input"] button:focus,
     .stTextInput [data-baseweb="input"] > div > div,
     .stSelectbox [data-baseweb="select"] > div > div,
     .stSelectbox [data-baseweb="select"] [role="combobox"],
@@ -228,6 +240,12 @@ st.markdown(
         background-color: transparent !important;
         border: none !important;
         box-shadow: none !important;
+    }
+
+    .stTextInput [data-baseweb="base-input"] button {
+        min-width: 3rem !important;
+        padding-right: 0.85rem !important;
+        color: var(--brand-deep) !important;
     }
 
     .stSelectbox [data-baseweb="select"] svg {
@@ -429,6 +447,21 @@ st.markdown(
         letter-spacing: 0.06em;
         color: var(--brand);
         margin-bottom: 0.35rem;
+    }
+
+    .login-feature-grid .feature-title {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        padding: 0.42rem 0.82rem;
+        border-radius: 999px;
+        background: var(--brand-soft);
+        color: var(--brand);
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin-bottom: 0.72rem;
     }
 
     .feature-copy,
@@ -1132,27 +1165,28 @@ elif st.session_state.current_page == "welcome":
         }
         .page-hero {
             margin-bottom: 0;
-            padding: 1.55rem 1.7rem;
+            padding: 1.35rem 1.5rem;
         }
         .page-hero .hero-title {
-            font-size: clamp(2rem, 3.8vw, 3.45rem);
-            margin-bottom: 0.6rem;
+            font-size: clamp(1.7rem, 3vw, 2.95rem);
+            line-height: 1.08;
+            margin-bottom: 0.5rem;
         }
         .page-hero .hero-copy {
-            font-size: 0.98rem;
-            line-height: 1.72;
+            font-size: 0.95rem;
+            line-height: 1.65;
         }
         .page-hero .page-note {
-            margin-top: 0.6rem;
-            line-height: 1.68;
+            margin-top: 0.45rem;
+            line-height: 1.6;
         }
         .page-hero .brand-logo {
-            width: 74px;
-            max-width: 74px;
-            border-radius: 20px;
+            width: 68px;
+            max-width: 68px;
+            border-radius: 18px;
         }
         .page-hero .brand-name {
-            font-size: 1.55rem;
+            font-size: 1.4rem;
         }
         .welcome-side-stack .meta-tile,
         .welcome-side-stack .panel-card {
@@ -1164,7 +1198,7 @@ elif st.session_state.current_page == "welcome":
         }
         .welcome-cta-card .section-heading {
             margin-bottom: 0.35rem;
-            font-size: 1.75rem;
+            font-size: 1.62rem;
         }
         @media (max-width: 980px) {
             [data-testid="stAppViewContainer"] {
@@ -1177,10 +1211,10 @@ elif st.session_state.current_page == "welcome":
                 padding-bottom: 1.35rem !important;
             }
             .page-hero {
-                padding: 1.35rem 1.2rem;
+                padding: 1.25rem 1.1rem;
             }
             .page-hero .hero-title {
-                font-size: clamp(1.9rem, 7vw, 2.8rem);
+                font-size: clamp(1.75rem, 6.4vw, 2.4rem);
             }
         }
         </style>
