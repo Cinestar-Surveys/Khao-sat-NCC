@@ -103,15 +103,6 @@ def get_local_timestamp_string():
     return pd.Timestamp.now(tz=ZoneInfo("Asia/Ho_Chi_Minh")).strftime("%d/%m/%Y %H:%M:%S")
 
 
-def build_ncc_status_badge(ncc_name, status_label, tone):
-    return f"""
-    <div class="ncc-status-chip tone-{safe_html(tone)}">
-        <span class="ncc-status-chip-label">{safe_html(status_label)}</span>
-        <span class="ncc-status-chip-name">{safe_html(ncc_name)}</span>
-    </div>
-    """
-
-
 # =====================================================================
 # --- CẤU HÌNH THÔNG TIN CÔNG TY & BẢO MẬT
 # Ưu tiên lấy từ st.secrets, sau đó tới biến môi trường.
@@ -506,45 +497,6 @@ st.markdown(
         color: var(--brand-deep);
     }
 
-    .ncc-status-board {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.7rem;
-        margin-top: 0.9rem;
-    }
-
-    .ncc-status-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.58rem 0.82rem;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-        background: #ffffff;
-        font-size: 0.92rem;
-        line-height: 1.3;
-    }
-
-    .ncc-status-chip-label {
-        font-weight: 800;
-        color: var(--brand-deep);
-        white-space: nowrap;
-    }
-
-    .ncc-status-chip-name {
-        color: var(--ink);
-    }
-
-    .ncc-status-chip.tone-done {
-        border-color: rgba(42, 160, 92, 0.28);
-        background: #ffffff;
-    }
-
-    .ncc-status-chip.tone-edited {
-        border-color: rgba(214, 132, 31, 0.28);
-        background: #ffffff;
-    }
-
     .page-note {
         margin-top: 0.45rem;
         color: var(--muted);
@@ -648,10 +600,14 @@ if "login_dept_widget" not in st.session_state:
     st.session_state.login_dept_widget = "-- Chọn Bộ phận --"
 if "evaluator_name" not in st.session_state:
     st.session_state.evaluator_name = ""
+if "evaluator_name_widget" not in st.session_state:
+    st.session_state.evaluator_name_widget = st.session_state.evaluator_name
 if "current_ncc_selector" not in st.session_state:
     st.session_state.current_ncc_selector = ""
 if "current_ncc_widget" not in st.session_state:
     st.session_state.current_ncc_widget = ""
+if "pending_ncc_widget_value" not in st.session_state:
+    st.session_state.pending_ncc_widget_value = ""
 if "scroll_to_top" not in st.session_state:
     st.session_state.scroll_to_top = False
 if "evaluated_nccs" not in st.session_state:
@@ -828,9 +784,36 @@ def scroll_page_to_top():
         """
         <script>
         const targetWindow = window.parent || window;
-        if (targetWindow && typeof targetWindow.scrollTo === "function") {
-            targetWindow.scrollTo({ top: 0, behavior: "smooth" });
+        const targetDocument = targetWindow.document || document;
+
+        function resetScrollPosition() {
+            const scrollTargets = [
+                targetWindow,
+                targetDocument.documentElement,
+                targetDocument.body,
+                targetDocument.scrollingElement,
+                targetDocument.querySelector('[data-testid="stAppViewContainer"]'),
+                targetDocument.querySelector('section.main'),
+                targetDocument.querySelector('[data-testid="stMain"]'),
+            ].filter(Boolean);
+
+            scrollTargets.forEach((target) => {
+                try {
+                    if (typeof target.scrollTo === "function") {
+                        target.scrollTo({ top: 0, left: 0, behavior: "instant" });
+                    }
+                } catch (error) {}
+                try {
+                    target.scrollTop = 0;
+                    target.scrollLeft = 0;
+                } catch (error) {}
+            });
         }
+
+        resetScrollPosition();
+        [60, 180, 360, 720].forEach((delay) => {
+            targetWindow.setTimeout(resetScrollPosition, delay);
+        });
         </script>
         """,
         height=0,
@@ -882,10 +865,12 @@ def reset_evaluation_flow():
     st.session_state.all_results_buffer = []
     st.session_state.current_ncc_selector = ""
     st.session_state.current_ncc_widget = ""
+    st.session_state.pending_ncc_widget_value = ""
     st.session_state.confirm_submit_results = False
     st.session_state.last_api_status = None
     st.session_state.last_api_response = None
     st.session_state.evaluator_name = ""
+    st.session_state.evaluator_name_widget = ""
     st.session_state.scroll_to_top = False
     st.session_state.last_saved_ncc = ""
     clear_question_widget_states()
@@ -1227,7 +1212,8 @@ elif st.session_state.current_page == "evaluation":
             unsafe_allow_html=True,
         )
 
-        evaluator_name = st.text_input("👤 Họ tên nhân viên đánh giá", key="evaluator_name")
+        evaluator_name = st.text_input("👤 Họ tên nhân viên đánh giá", key="evaluator_name_widget")
+        st.session_state.evaluator_name = evaluator_name
         meta_col1, meta_col2 = st.columns(2)
         meta_col1.info(f"🏢 Site đăng nhập: {st.session_state.selected_site}")
         meta_col2.info(f"📁 Bộ phận đánh giá: {st.session_state.selected_dept}")
@@ -1295,9 +1281,11 @@ elif st.session_state.current_page == "evaluation":
             # Tự động trỏ tới NCC chưa hoàn thành tiếp theo để thao tác nhanh hơn.
             if st.session_state.current_ncc_selector not in list_ncc:
                 st.session_state.current_ncc_selector = get_next_pending_ncc(list_ncc)
-            if st.session_state.current_ncc_widget not in list_ncc:
-                st.session_state.current_ncc_widget = st.session_state.current_ncc_selector
-            elif st.session_state.current_ncc_widget != st.session_state.current_ncc_selector:
+            if st.session_state.pending_ncc_widget_value in list_ncc:
+                st.session_state.current_ncc_selector = st.session_state.pending_ncc_widget_value
+                st.session_state.current_ncc_widget = st.session_state.pending_ncc_widget_value
+                st.session_state.pending_ncc_widget_value = ""
+            elif st.session_state.current_ncc_widget not in list_ncc:
                 st.session_state.current_ncc_widget = st.session_state.current_ncc_selector
 
             # Chỉ giữ dropdown chọn NCC, không hiển thị danh sách NCC riêng bên cạnh.
@@ -1318,34 +1306,6 @@ elif st.session_state.current_page == "evaluation":
                 """,
                 unsafe_allow_html=True,
             )
-
-            completed_badges = "".join(
-                [
-                    build_ncc_status_badge(ncc, "Đã lưu", "done")
-                    for ncc in evaluated_nccs_for_site
-                    if ncc not in st.session_state.edited_nccs
-                ]
-            )
-            edited_badges = "".join(
-                [
-                    build_ncc_status_badge(ncc, "Đã chỉnh sửa", "edited")
-                    for ncc in list_ncc
-                    if ncc in st.session_state.edited_nccs
-                ]
-            )
-            if completed_badges or edited_badges:
-                st.markdown(
-                    f"""
-                    <div class="panel-card" style="padding: 1rem 1.1rem; margin-top: 0.8rem;">
-                        <div class="feature-title">NCC đã hoàn tất trong phiên này</div>
-                        <div class="feature-copy">
-                            Các NCC đã lưu hoặc đã chỉnh sửa sẽ hiện ngay bên ngoài dropdown để bạn theo dõi nhanh.
-                        </div>
-                        <div class="ncc-status-board">{completed_badges}{edited_badges}</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
 
             if current_ncc in evaluated_nccs_for_site:
                 st.info("NCC này đã được lưu trước đó. Nếu bạn chỉnh lại và bấm lưu, hệ thống sẽ thay kết quả cũ bằng kết quả mới.")
@@ -1454,7 +1414,9 @@ elif st.session_state.current_page == "evaluation":
                         saved_timestamp = get_local_timestamp_string()
                         answers_to_save = [{**answer, "Thời gian": saved_timestamp} for answer in current_answers]
                         replace_ncc_results(current_ncc, answers_to_save)
-                        st.session_state.current_ncc_selector = get_next_pending_ncc(list_ncc)
+                        next_ncc = get_next_pending_ncc(list_ncc)
+                        st.session_state.current_ncc_selector = next_ncc
+                        st.session_state.pending_ncc_widget_value = next_ncc
                         st.session_state.scroll_to_top = True
                         st.rerun()
         else:
@@ -1511,7 +1473,8 @@ elif st.session_state.current_page == "review_submit":
     top_col1, top_col2 = st.columns([1, 1])
     with top_col1:
         if st.button("⬅️ Quay lại trang 3 để đánh giá lại", use_container_width=True):
-            st.session_state.evaluator_name = st.session_state.get("evaluator_name", "")
+            st.session_state.evaluator_name_widget = st.session_state.get("evaluator_name", "")
+            st.session_state.pending_ncc_widget_value = st.session_state.get("current_ncc_selector", "")
             st.session_state.current_page = "evaluation"
             st.session_state.scroll_to_top = True
             st.rerun()
