@@ -217,6 +217,14 @@ st.markdown(
         overflow: hidden !important;
     }
 
+    .stTextInput [data-baseweb="base-input"] {
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        box-sizing: border-box !important;
+        padding-right: 0.2rem !important;
+    }
+
     .stTextInput [data-baseweb="base-input"] > div,
     .stTextInput [data-baseweb="base-input"] [data-baseweb="input"] {
         border: none !important;
@@ -224,10 +232,23 @@ st.markdown(
         background: transparent !important;
     }
 
+    .stTextInput [data-baseweb="base-input"] > div:first-child {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        width: 1% !important;
+    }
+
+    .stTextInput [data-baseweb="base-input"] [data-baseweb="input"] {
+        width: 100% !important;
+    }
+
     .stTextInput input {
         font-size: 1rem !important;
         color: var(--ink) !important;
         background: transparent !important;
+        width: 100% !important;
+        padding: 0.72rem 0.9rem !important;
+        box-sizing: border-box !important;
     }
 
     .stTextInput [data-baseweb="base-input"] button,
@@ -243,8 +264,9 @@ st.markdown(
     }
 
     .stTextInput [data-baseweb="base-input"] button {
+        flex: 0 0 auto !important;
         min-width: 3rem !important;
-        padding-right: 0.85rem !important;
+        padding: 0 0.8rem 0 0.55rem !important;
         color: var(--brand-deep) !important;
     }
 
@@ -421,7 +443,12 @@ st.markdown(
         padding: 1.8rem;
     }
 
-    .login-feature-grid,
+    .login-feature-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.9rem;
+    }
+
     .meta-grid,
     .stat-grid {
         display: grid;
@@ -1089,10 +1116,6 @@ if st.session_state.current_page == "login":
                     <div class="feature-card">
                         <div class="feature-title">Đánh giá có kiểm soát</div>
                         <div class="feature-copy">Mỗi NCC được lưu riêng, có thể quay lại chỉnh sửa trước khi nộp chính thức.</div>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-title">Tối ưu cho di động</div>
-                        <div class="feature-copy">Giao diện gọn, nút bấm lớn, thao tác dễ dùng trên desktop lẫn điện thoại.</div>
                     </div>
                 </div>
             </div>
