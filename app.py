@@ -3,6 +3,7 @@ import html
 import json
 import os
 import re
+import textwrap
 import time
 from zoneinfo import ZoneInfo
 
@@ -80,22 +81,26 @@ def build_logo_markup(css_class="brand-logo", fallback_text="CS"):
 
 
 def build_meta_tile(label, value, icon=""):
-    return f"""
-    <div class="meta-tile">
-        <div class="meta-label">{safe_html(icon)} {safe_html(label)}</div>
-        <div class="meta-value">{safe_html(value)}</div>
-    </div>
-    """
+    return textwrap.dedent(
+        f"""
+        <div class="meta-tile">
+            <div class="meta-label">{safe_html(icon)} {safe_html(label)}</div>
+            <div class="meta-value">{safe_html(value)}</div>
+        </div>
+        """
+    ).strip()
 
 
 def build_stat_tile(label, value, detail="", tone="default"):
-    return f"""
-    <div class="stat-tile tone-{safe_html(tone)}">
-        <div class="stat-label">{safe_html(label)}</div>
-        <div class="stat-value">{safe_html(value)}</div>
-        <div class="stat-detail">{safe_html(detail)}</div>
-    </div>
-    """
+    return textwrap.dedent(
+        f"""
+        <div class="stat-tile tone-{safe_html(tone)}">
+            <div class="stat-label">{safe_html(label)}</div>
+            <div class="stat-value">{safe_html(value)}</div>
+            <div class="stat-detail">{safe_html(detail)}</div>
+        </div>
+        """
+    ).strip()
 
 
 def get_local_timestamp_string():
@@ -1219,15 +1224,17 @@ elif st.session_state.current_page == "welcome":
                 build_meta_tile("Site đăng nhập", current_site, "🏢"),
                 build_meta_tile("Bộ phận đánh giá", st.session_state.selected_dept or "--", "📁"),
                 build_meta_tile("Phạm vi khảo sát", "Danh sách NCC theo site đã đăng nhập", "🎯"),
-                """
-                <div class="panel-card">
-                    <div class="feature-title">Mục tiêu phiên khảo sát</div>
-                    <div class="feature-copy">
-                        Đánh giá định kỳ để cải thiện chất lượng dịch vụ, tiến độ cung ứng
-                        và mức độ phối hợp với từng nhà cung cấp.
+                textwrap.dedent(
+                    """
+                    <div class="panel-card">
+                        <div class="feature-title">Mục tiêu phiên khảo sát</div>
+                        <div class="feature-copy">
+                            Đánh giá định kỳ để cải thiện chất lượng dịch vụ, tiến độ cung ứng
+                            và mức độ phối hợp với từng nhà cung cấp.
+                        </div>
                     </div>
-                </div>
-                """,
+                    """
+                ).strip(),
             ]
         )
         st.markdown(f'<div class="welcome-side-stack">{welcome_side_markup}</div>', unsafe_allow_html=True)
