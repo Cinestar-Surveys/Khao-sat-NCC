@@ -770,6 +770,8 @@ if "pending_ncc_widget_value" not in st.session_state:
     st.session_state.pending_ncc_widget_value = ""
 if "scroll_to_top" not in st.session_state:
     st.session_state.scroll_to_top = False
+if "pending_scroll_target" not in st.session_state:
+    st.session_state.pending_scroll_target = ""
 if "pending_reset_after_submit" not in st.session_state:
     st.session_state.pending_reset_after_submit = False
 if "evaluated_nccs" not in st.session_state:
@@ -982,6 +984,61 @@ def scroll_page_to_top():
     )
 
 
+def scroll_to_element(element_id):
+    # Cuộn tới đúng khu vực mong muốn trong trang, ví dụ khối chọn NCC.
+    escaped_element_id = json.dumps(element_id)
+    components.html(
+        f"""
+        <script>
+        const targetWindow = window.parent || window;
+        const targetDocument = targetWindow.document || document;
+        const elementId = {escaped_element_id};
+
+        function scrollToTarget() {{
+            const targetElement = targetDocument.getElementById(elementId);
+            if (!targetElement) {{
+                return;
+            }}
+
+            try {{
+                targetElement.scrollIntoView({{ behavior: "instant", block: "start" }});
+            }} catch (error) {{}}
+
+            const offsetTop = targetElement.getBoundingClientRect().top + (targetWindow.scrollY || 0);
+            const desiredTop = Math.max(offsetTop - 12, 0);
+            const scrollTargets = [
+                targetWindow,
+                targetDocument.documentElement,
+                targetDocument.body,
+                targetDocument.scrollingElement,
+                targetDocument.querySelector('[data-testid="stAppViewContainer"]'),
+                targetDocument.querySelector('section.main'),
+                targetDocument.querySelector('[data-testid="stMain"]'),
+            ].filter(Boolean);
+
+            scrollTargets.forEach((target) => {{
+                try {{
+                    if (typeof target.scrollTo === "function") {{
+                        target.scrollTo({{ top: desiredTop, left: 0, behavior: "instant" }});
+                    }}
+                }} catch (error) {{}}
+                try {{
+                    target.scrollTop = desiredTop;
+                    target.scrollLeft = 0;
+                }} catch (error) {{}}
+            }});
+        }}
+
+        scrollToTarget();
+        [60, 180, 360, 720].forEach((delay) => {{
+            targetWindow.setTimeout(scrollToTarget, delay);
+        }});
+        </script>
+        """,
+        height=0,
+    )
+
+
 def bind_enter_to_button(button_text, binding_key):
     # Cho phép nhấn Enter để kích hoạt nút hành động chính ở một số màn hình.
     escaped_button_text = json.dumps(button_text)
@@ -1034,6 +1091,7 @@ def reset_evaluation_flow():
     st.session_state.evaluator_name = ""
     st.session_state.evaluator_name_widget = ""
     st.session_state.scroll_to_top = False
+    st.session_state.pending_scroll_target = ""
     st.session_state.pending_reset_after_submit = False
     st.session_state.last_saved_ncc = ""
     clear_question_widget_states()
@@ -1424,7 +1482,10 @@ elif st.session_state.current_page == "evaluation":
         unsafe_allow_html=True,
     )
 
-    if st.session_state.scroll_to_top:
+    if st.session_state.pending_scroll_target == "evaluation_ncc_anchor":
+        scroll_to_element("evaluation_ncc_anchor")
+        st.session_state.pending_scroll_target = ""
+    elif st.session_state.scroll_to_top:
         scroll_page_to_top()
         st.session_state.scroll_to_top = False
 
@@ -1530,6 +1591,7 @@ elif st.session_state.current_page == "evaluation":
                 st.session_state.current_ncc_widget = st.session_state.current_ncc_selector
 
             # Chỉ giữ dropdown chọn NCC, không hiển thị danh sách NCC riêng bên cạnh.
+            st.markdown('<div id="evaluation_ncc_anchor"></div>', unsafe_allow_html=True)
             current_ncc = st.selectbox(
                 "👉 Chọn NCC để đánh giá hoặc đánh giá lại:",
                 list_ncc,
@@ -1658,7 +1720,7 @@ elif st.session_state.current_page == "evaluation":
                         next_ncc = get_next_pending_ncc(list_ncc)
                         st.session_state.current_ncc_selector = next_ncc
                         st.session_state.pending_ncc_widget_value = next_ncc
-                        st.session_state.scroll_to_top = True
+                        st.session_state.pending_scroll_target = "evaluation_ncc_anchor"
                         st.rerun()
         else:
             st.warning("Site này chưa có NCC nào trong file dữ liệu.")
